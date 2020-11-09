@@ -1,0 +1,131 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Uni Bern Beamer Style
+% 2018-09-06
+% Tobi Oetiker <tobi@oetiker.ch>
+% iA ulrich.zwahlen@kommunikation.unibe.ch
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{calc}
+\RequirePackage{etoolbox}
+
+\mode<presentation>
+
+\newdimen\beamer@ubBorderHeight
+\newdimen\beamer@ubTitleHeight
+\newdimen\beamer@ubFooterHeight
+\newdimen\beamer@ubOverlap
+
+\beamer@ubOverlap=0.2pt
+\beamer@ubBorderHeight=0.015\paperheight
+\beamer@ubTitleHeight=0.125\paperheight
+\beamer@ubFooterHeight=0.032\paperheight
+
+\definecolor{ubRed}{HTML}{E6002E}
+\definecolor{ubGrey}{RGB}{255,255,255}
+
+\ProcessOptionsBeamer
+
+\setbeamercolor{normal text}{fg=black}
+\setbeamercolor{alerted text}{fg=ubRed}
+\setbeamercolor{itemize item}{fg=ubRed}
+\setbeamercolor{itemize subitem}{fg=ubRed}
+\setbeamercolor{example text}{fg=black}
+\setbeamercolor{structure}{fg=black}
+\setbeamercolor{date in title page}{fg=black}
+
+% set fonts
+\RequirePackage[scaled]{helvet}
+\renewcommand*\familydefault{\sfdefault}
+
+\usefonttheme[onlymath]{serif}
+\RequirePackage{iftex}
+\ifPDFTeX
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\fi
+
+
+
+\setbeamerfont*{structure}{series=\bfseries}
+\setbeamerfont*{title}{size*={18}{22}}
+\setbeamercolor*{title}{bg=ubRed}
+\setbeamerfont*{subtitle}{size*={18}{22}}
+\setbeamerfont*{author}{size*={10}{12},series=\bfseries}
+\setbeamerfont*{institute}{size*={10}{12}}
+\setbeamerfont*{frametitle}{size*={18}{22}}
+\setbeamercolor*{frametitle}{fg=ubRed}
+\setbeamerfont*{framesubtitle}{size*={18}{22}}
+\setbeamercolor*{framesubtitle}{fg=black}
+\setbeamerfont*{date}{size*={8}{10}}
+\setbeamerfont*{headline}{size*={8}{10}}
+\beamertemplatenavigationsymbolsempty
+
+\defbeamertemplate*{title page}{uni bern}{%
+  % list trick from http://www.tex.ac.uk/cgi-bin/texfaq2html?label=chngmargonfly
+  \begin{list}{}{
+  \setlength{\listparindent}{\parindent}%
+  \setlength{\itemindent}{\parindent}%
+  \setlength{\parsep}{\parskip}%
+  \setlength{\leftmargin}{0pt}%
+  \setlength{\rightmargin}{0pt}}
+  \item[]
+  \vspace*{\stretch{2}}
+  {\usebeamerfont*{title}\color{ubRed}\inserttitle\par} % no idea why usebeamercolor{title} does not work here
+  {\usebeamerfont*{subtitle}\insertsubtitle\par}
+  \vspace{\stretch{1}}
+  {\usebeamerfont{author}\insertauthor\par}
+  {\usebeamerfont{date}\insertdate\par}
+  \vspace*{\stretch{2}}
+  \end{list}
+%  \end{minipage}
+}
+
+\defbeamertemplate*{background canvas}{uni bern}{%
+\begin{minipage}[t]{\paperwidth+10pt}
+   \setlength{\baselineskip}{0pt}
+   \setlength{\lineskip}{-\beamer@ubOverlap}
+   \setlength{\parskip}{0pt}
+   \ifnumgreater{\c@framenumber}{1}{
+    \raisebox{-\height-2\beamer@ubBorderHeight}[0pt][0pt]{\hspace*{0.86\paperwidth}\includegraphics[width=0.125\paperwidth]{ublogo.pdf}}
+   }{}
+
+   \ifnumgreater{\c@framenumber}{2}{
+        \ifdefempty{\insertframesubtitle}{
+          \rule{0pt}{6ex+\beamer@ubTitleHeight}\\
+          \color{ubGrey}\rule{\paperwidth}{\paperheight-\beamer@ubTitleHeight-\beamer@ubFooterHeight-6ex}
+        }{
+          \rule{0pt}{6ex+2\beamer@ubTitleHeight}\\          
+          \color{ubGrey}\rule{\paperwidth}{\paperheight-2\beamer@ubTitleHeight-\beamer@ubFooterHeight-6ex}   
+        }
+   }{}
+  \end{minipage}
+}
+
+\defbeamertemplate*{headline}{uni bern}{% 
+    \ifnumgreater{\c@framenumber}{2}{
+      \vspace{3.5ex}
+      \hspace{4.5ex}\inserttitle
+    }{}
+}
+
+\defbeamertemplate*{frametitle}{uni bern}{
+\begin{minipage}[b]{\textwidth}
+\vspace{0.5ex}
+\raggedright
+\vspace{3.5ex}
+{\insertframetitle\par}
+{\usebeamerfont{framesubtitle}\usebeamercolor*{framesubtitle}\insertframesubtitle}
+\end{minipage}
+}
+
+
+% set bullets
+
+\defbeamertemplate*{itemize item}{uni bern}{$\bullet$}
+\defbeamertemplate*{itemize subitem}{uni bern}{$\bullet$}
+\setbeamersize{text margin left=4ex}
+\setbeamersize{text margin right=4ex}
+
+
+
+\mode<all>
