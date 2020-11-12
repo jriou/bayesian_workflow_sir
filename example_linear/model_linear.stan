@@ -8,7 +8,6 @@ parameters {
 }
 
 model {
-  target += normal_lpdf(theta | 0, 1);
-  for (n in 1:N)
-    target += normal_lpdf(y[n] | theta, 1);
+  theta ~ normal(0,1);
+  y ~ normal(theta,1);
 }
