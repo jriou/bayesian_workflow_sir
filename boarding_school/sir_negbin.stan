@@ -24,7 +24,7 @@ data {
   real ts[T];
   int N;
   int cases[T];
-  int compute_likelihood;
+  int switch_likelihood;
 }
 
 transformed data {
@@ -35,13 +35,14 @@ transformed data {
 
 parameters {
   real<lower=0> beta;
-  real<lower=0> gamma;
+  real<lower=0> recovery_time;
   real<lower=0> phi_inv;
 }
 
 transformed parameters{
   real y[T,3];
   real phi = 1. / phi_inv;
+  real gamma = 1. / recovery_time;
   real theta[2];
   theta[1] = beta;
   theta[2] = gamma;
@@ -51,17 +52,16 @@ transformed parameters{
 
 model {
   // priors
-  beta ~ normal(2,1);
-  gamma ~ normal(0.4,0.5);
+  beta ~ exponential(1);
+  recovery_time ~ normal(2,0.5);
   phi_inv ~ exponential(5);
   
   // observation model
-  if(compute_likelihood) cases ~ neg_binomial_2(col(to_matrix(y),2), phi);
+  if(switch_likelihood==1) cases ~ neg_binomial_2(col(to_matrix(y),2), phi);
 }
 
 generated quantities {
   real R0 = beta/gamma;
-  real recovery_time = 1/gamma;
   real pred_cases[T];
   pred_cases = neg_binomial_2_rng(col(to_matrix(y),2), phi);
 }

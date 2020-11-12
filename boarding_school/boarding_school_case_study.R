@@ -28,13 +28,13 @@ r0 = 0
 y0 = c(s0, i0, r0)
 
 # put into list
-input_data = list(T = n_days, y0 = y0, t0 = t0, ts = t, N = N, cases = cases)
+input_data = list(T = n_days, y0 = y0, t0 = t0, ts = t, N = N, cases = cases, switch_likelihood = 0)
 
 ## Sample ----
 fit = stan(file='sir_negbin.stan', 
            data=input_data,
            chains=4,
-           iter=1000,)
+           iter=1000)
 
 ## Check diagnostics ----
 check_hmc_diagnostics(fit) 
@@ -54,7 +54,12 @@ summary(fit,pars="pred_cases")[[1]] %>%
   labs(x="Date",y="Number of students in bed")
 ggsave(file="inbed_fit.pdf",width=4,height=3)
 
-
 ## Show results ----
 print(fit,pars=c("beta","gamma","phi","R0","recovery_time"))
 
+## Prior predictive check ----
+inout_data$switch_likelihood == 0
+fit_prior = stan(file='sir_negbin.stan', 
+                 data=input_data,
+                 chains=4,
+                 iter=1000)
