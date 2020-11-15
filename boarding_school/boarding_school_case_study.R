@@ -42,8 +42,8 @@ check_hmc_diagnostics(fit)
 stan_trace(fit,pars=c("beta","gamma","phi"),inc_warmup=TRUE)
 ggsave(file="trace_theta.pdf",width=7,height=2.5)
 
-stan_dens(fit,pars=c("beta","gamma","phi"),separate_chains = TRUE)
-ggsave(file="post_theta.pdf",width=7,height=2.5)
+stan_dens(fit,pars=c("beta","recovery_time","phi_inv","R0","gamma","phi"),separate_chains = TRUE)
+ggsave(file="post_theta.pdf",width=7,height=5)
 
 ## Posterior predictive check ----
 summary(fit,pars="pred_cases")[[1]] %>%
