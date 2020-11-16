@@ -34,12 +34,6 @@ sim_data = ode(inits, times, seir, pars,method="rk4")
 tibble(sim_data)
 
 ## Plot ----
-## Simulate ----
-times = seq(0,50,by=1)
-sim_data = ode(inits, times, seir, pars,method="rk4")
-tibble(sim_data)
-
-## Plot ----
 sim_data %<>%
   as.data.frame() %>%
   pivot_longer(2:4) %>%

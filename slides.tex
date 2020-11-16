@@ -11,6 +11,7 @@
 \usepackage{listings} % show code
 \usepackage{dsfont} % show code
 \usepackage{fontawesome}
+\usepackage{tikz}
 
 % slide numbering
 \setbeamertemplate{sidebar right}{}
@@ -39,7 +40,7 @@
 		\item Prerequisites:
 			\begin{itemize}
 				\item general understanding of Bayesian inference
-				\item basic programming with \texttt{R} and \texttt{Stan}
+				\item basic programming with \texttt{R} and \texttt{Stan 2.21} 
 			\end{itemize}
 		\item All material is available on \url{https://github.com/jriou/bayesian_workflow}
 	\end{itemize}
@@ -686,7 +687,7 @@ $$
 
 \frame{
 	\frametitle{Fitting a simple SIR}
-	Posterior predictive checking:
+	Posterior predictive checking (always show!):
 	\begin{figure}
 		\centering
 		\includegraphics[width=.6\linewidth]{boarding_school/inbed_fit.pdf}
@@ -745,7 +746,7 @@ $$
 	\alert{Fake data} can be used to probe the model and better understand its behaviour:
 	\begin{itemize}
 		\item[-] prior predictive checking
-		\item[-] model reliability checking
+		\item[-] simulation study
 	\end{itemize}	
 }
 
@@ -788,7 +789,7 @@ $$
 	\frametitle{Simulations to understand the model}
 	Prior predictive checking brings insight about \alert{non-obvious features}:
 	\begin{itemize}
-		\item while the priors seem large and weakly informative, there is actually not a lot of leeway
+		\item even if the priors seem weakly informative, there is actually not a lot of leeway
 		\item \alert{highly constrained} model: 
 		\begin{itemize}
 		\item[-] if $\beta$ is high, the epidemic will stop rapidly by lack of susceptibles
@@ -800,20 +801,818 @@ $$
 
 \frame{
 	\frametitle{Simulations to understand the model}
-	\alert{Model reliability checking} consists in attempting to recover chosen parameter values with the model:
-	identifiability issues
+	A \alert{simulation study} consists in two steps:
+	\begin{itemize}
+		\item simulate data with specified parameter values
+		\item measure the capacity of the model to recover the chosen parameter values
+\end{itemize}
+	\bigskip\pause
+	Many advantages:
+	\begin{itemize}
+	\item check for bugs and coding mistakes
+	\item check for \alert{identifiability} issues
+	\item compare different versions of a model
+	\item understand in what \alert{situations} a model works or not
+\end{itemize}
+}
+
+\frame{
+	\frametitle{Simulations to understand the model}
+	Let's go back to the \alert{simple SIR example} from the beginning:
+	\begin{itemize}
+		\item set $\beta=2$ and $\gamma=0.5$ (so that $\mathcal{R}_0=4$) 
+		\item simulate in a susceptible population of size $N=763$ with $I_0=1$
+	\end{itemize}
+	\begin{figure}
+	\centering
+	\includegraphics[width=.6\linewidth]{boarding_school/example_sir1.pdf}
+\end{figure}
+}
+
+\frame{
+	\frametitle{Simulations to understand the model}
+	Add noise with a \alert{negative binomial} distribution with $\phi=15$
+	\begin{figure}
+		\centering
+		\includegraphics[width=.6\linewidth]{boarding_school/example_sir2.pdf}
+	\end{figure}
+}
+
+\frame{
+	\frametitle{Simulations to understand the model}
+	Fit the \alert{same model} as for the boarding school example
+	\begin{figure}
+		\centering
+		\includegraphics[width=1\linewidth]{boarding_school/trace_theta_sim.pdf}
+	\end{figure}
+}
+
+
+\frame{
+	\frametitle{Simulations to understand the model}
+	Posterior predictive checking
+	\begin{figure}
+		\centering
+		\includegraphics[width=.6\linewidth]{boarding_school/inbed_fit_sim.pdf}
+	\end{figure}
+}
+
+
+\frame{
+	\frametitle{Simulations to understand the model}
+	\bigskip
+	Compare the posterior distributions of the parameters with the \alert{``truth''}
+	\begin{figure}
+		\centering
+		\includegraphics[width=.9\linewidth]{boarding_school/post_theta_sim.pdf}
+	\end{figure}
+	\begin{itemize}
+		\vspace{-1em}
+	\item no identifiability issue
+	\item $\beta$ and $\gamma$ are well estimated, but $\phi$ is not
+	\item try with other values to understand \alert{when does the model break}
+	\end{itemize}
+}
+
+\frame{
+	\frametitle{Outline}
+	\begin{itemize}
+		\item Introduction
+		\item (Quick notice: Bayesian inference with Stan)
+		\item Fitting a simple SIR
+		\item {Simulations to understand the model}
+		\item \textbf{Scaling up ODE-based models}
+		\item Extensions 
+	\end{itemize}
+}
+
+\frame{
+	\frametitle{Scaling up ODE-based models}
+	Inference with ODE-based models is \alert{computationally intensive}
+	\bigskip
 	
+	Be attentive to the model structure:
+		\begin{itemize}
+		\item HMC requires to compute the \alert{gradient} of the log joint density 
+		multiple times for each iteration 
+		$$
+		\triangledown_{\theta}\log \Pr(y,\theta)
+		$$
+		 \item each block is treated differently
+		 	\begin{itemize}
+		 	\item[-] \texttt{transformed data} and \texttt{generated quantities} are evaluated once per iteration
+		 	\item[-] \texttt{parameters}, \texttt{transformed parameters} and \texttt{model} are evaluated multiple times for each iteration
+		 	\item[$\rightarrow$] put everything that \alert{does not influence the inference} (e.g. $\mathcal{R}_0$ or predicted values)  in \texttt{generated quantities} 
+	 			 \end{itemize}
+	\end{itemize}
+		
+}
+
+
+\frame{
+	\frametitle{Scaling up ODE-based models}
+	\alert{Limiting the load} of the ODE solver:
+	\begin{figure}
+		\centering
+		\includegraphics[width=.8\linewidth]{boarding_school/stan_code5bis.png}
+	\end{figure}
+	\begin{itemize}
+		\item the computational cost of solving the ODEs scales with $N + NK$
+		\begin{itemize}
+			\item[-] $N$: the number of compartments
+			\item[-] $K$: the number of parameters in \texttt{y0} and \texttt{theta}
+		\end{itemize}
+		\item[$\rightarrow$] remove unnecessary compartments (e.g. $R(t)$)
+		\item[$\rightarrow$] reparametrize initial conditions
+	\end{itemize}
+	
+}
+
+\frame{
+	\frametitle{Scaling up ODE-based models}
+	Picking \alert{the right ODE solver}:
+	\begin{itemize}
+		\item two are available:
+	\begin{itemize}
+		\item[-] \texttt{integrate\_ode\_rk45} uses the Runge-Kutta method (quicker but non-adapted to stiff systems)
+		\item[-] \texttt{integrate\_ode\_bdf} uses the backward differentiation method (slower but adapted to stiff systems)
+	\end{itemize}
+	\item there is no formal definition of \alert{stiffness}
+	\item intuitively, it occurs when the time step of the integrator needs to be very small to keep the solution stable (e.g. large variations in magnitude in time)
+	\item[$\rightarrow$] start with \texttt{rk45}, move to \texttt{bdf} if there are problems (\textit{folk theorem of statistical computing})
+\end{itemize}
+}
+
+\frame{
+	\frametitle{Scaling up ODE-based models}
+	\alert{Tuning} the ODE solver:
+		\begin{itemize}
+		\item additional options in the solver function
+		\begin{figure}
+		\centering
+		\includegraphics[width=.8\linewidth]{boarding_school/tolerances.png}
+	\end{figure}
+		\begin{itemize}
+			\item[-] \texttt{rel\_tol} is the relative tolerance
+			\item[-] \texttt{abs\_tol} is the absolute tolerance
+			\item[-] \texttt{max\_steps} is the maximum number of steps 
+		\end{itemize}
+	\item can be adjusted depending on the level of \alert{precision} needed
+	\end{itemize}
+
+	\bigskip
+	\faWarning\ be cause of the tolerance, the ODE solver may sometimes give negative values when too close to zero, causing issues
+	
+	\vspace{.2em}$\rightarrow$ this can be solved by \alert{adding 5-10 times the absolute tolerance} to the ODE output
+}
+
+\frame{
+	\frametitle{Outline}
+	\begin{itemize}
+		\item Introduction
+		\item (Quick notice: Bayesian inference with Stan)
+		\item Fitting a simple SIR
+		\item {Simulations to understand the model}
+		\item {Scaling up ODE-based models}
+		\item \textbf{Extensions} 
+	\end{itemize}
+}
+
+\frame{
+	\frametitle{Extensions}
+	In practice, the boarding school example quickly reaches its \alert{limits}:
+	\begin{itemize}
+		\item epidemics are not often observed in such a controlled environment (\alert{under-ascertainment})
+		\item epidemics are not always left uncontrolled
+		\item data generally consist of daily counts of new cases (\alert{incidence}) rather than counts of currently sick people (\alert{prevalence})
+		\item most infectious diseases have an \alert{incubation period} (SEIR instead of SIR)
+		\item transmission is generally not homogeneous in the full population (\alert{stratification} by age, sex...)
+		\item ...
+	\end{itemize}
+}
+
+\frame{
+	\frametitle{Extensions}
+	Example with SARS-CoV-2 from \alert{Hauser et al.~(2020)}:
+	\vspace{1em}
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width=.9\linewidth]{example_hauser/paper_ref.png}
+	\end{figure}
+}
+
+\frame{
+	\frametitle{Background}
+	The \alert{case fatality ratio} (CFR) is computed as the number of deaths divided by the number of reported cases at time $t$.
+	\bigskip
+	
+	Estimated in real time, the CFR is a misleading indicator of mortality due to SARS-CoV-2 because of two opposing biases:
+	\begin{itemize}
+		\item \alert{preferential ascertainment of severe cases}: severe cases are both more likely to die and more likely to be diagnosed and reported
+		\item[$\rightarrow$] overestimates mortality
+		\vspace{.4em}
+		\item \alert{right-censoring} of deaths: there is a long delay between infection and deaths, so that part of the cases at time $t$ will die in the future
+		\item[$\rightarrow$] underestimates mortality
+	\end{itemize}
+}
+
+\frame{
+	\frametitle{Background}
+	This \alert{limits the interpretability} of the CFR:
+	
+	\begin{itemize}
+		\item varies in time (ascending or descending phase)
+		\item varies across countries (depending on surveillance system)
+		
+		\item[$\rightarrow$] April 2020: from 2.4\% in Wuhan to 17.8\% in Lombardy)
+		
+		\bigskip
+		\item the real indicator of interest is the \alert{infection fatality ratio}, i.e. the total number of deaths that occur among people infected with SARS-CoV-2
+	\end{itemize}
+}
+
+\frame{
+	\frametitle{Objectives}
+	\begin{itemize}
+		\item[(1)] Simulate the dynamics of transmission and mortality of SARS-CoV-2 using publicly available surveillance data 
+		
+		\item[(2)] Provide \alert{overall and age-stratified estimates of IFR} for SARS-CoV-2 infection adjusted for right-censoring and preferential ascertainment
+		
+		\bigskip
+		 in \alert{seven different geographic locations} with available data on:
+		 \item reported cases by date of disease onset
+		 \item deaths linked to SARS-CoV-2 infection by date of death
+		 \item age distribution of cases
+		 \item age distribution of deaths
+	\end{itemize}
+}
+
+
+\frame{
+	\frametitle{Data}
+	In Hubei province (China):
+	\begin{figure}
+		\centering
+				\includegraphics[width=.9\linewidth]{example_hauser/data_china.pdf}
+	\end{figure}
+}
+
+
+\frame{
+	\frametitle{Model development}
+	Specific features and natural history of SARS-CoV-2 infection:
+	\begin{itemize}
+		\item Incubation period of 5 days (S\alert{E}IR)
+		\item Pre-symptomatic transmission accounting for 44-48\% (SE\alert{P}IR)
+		\item Symptoms in 81\% (95\%CrI 71\%–89\%) of cases (SEPI\alert{A}R)
+		\item Respiratory virus transmitted through contacts (\alert{age stratification})
+		\item Effect of control measures (\alert{time-dependent force of infection})
+		\item Mortality is delayed by $20.2 \pm 11.6$ days (\alert{fit to mortality data})
+	\end{itemize}
+}
+
+\frame{
+	\frametitle{Model development}
+	 Final model:
+	 \begin{figure}
+	 \scalebox{.8}{\begin{tikzpicture}
+	 		% cascade of care
+	 		\node[circle, draw, inner sep=0pt, minimum size=1cm] (S) at (0,0) {$S_k$};
+	 		\node[circle, draw, inner sep=0pt, minimum size=1cm] (E) at (3,0) {$E_k$};
+	 		\node[circle, draw, inner sep=0pt, minimum size=1cm] (P) at (6,0) {$P_k$};
+%	 		\node[circle, draw, inner sep=0pt, minimum size=1cm,gray,dashed] (C) at (8.5,-2.5) {$C_k$};
+%	 		\node[circle, draw, inner sep=0pt, minimum size=1cm,gray,dashed] (rho_C) at (12,-2.5) {$\rho_k C_k$};
+	 		\node[circle, draw, inner sep=0pt, minimum size=1cm,fill=white] (I) at (9,-1.5) {$I_k$};
+	 		\node[circle, draw, inner sep=0pt, minimum size=1cm] (A) at (9,1.5) {$A_k$};
+	 		\node[circle, draw, inner sep=0pt, minimum size=1cm] (R) at (12,0) {$R_k$};
+	 		
+	 		\draw[->,>=latex] (S) edge node[above] { $\lambda_k(t)$} (E);
+	 		\draw[->,>=latex] (E) edge node[above] { $\tau_1$ } (P);
+	 		\draw[->,>=latex] (P) edge node[yshift=10,xshift=-5] { $\tau_2(1-\psi)$ } (A);
+	 		\draw[->,>=latex] (P) edge node[above] { $\tau_2\psi$ } (I);
+%	 		\draw[->,>=latex,gray,dashed] (P) edge[bend left=12] node[below] { $\tau_2\psi$ } (C);
+	 		\draw[->,>=latex] (A) edge node[above] { $\mu$ } (R);
+	 		\draw[->,>=latex] (I) edge node[above] { $\mu$ } (R);
+%	 		\draw[double,gray] (C) -- node[above] { $\rho_k$ }  (rho_C);
+%	 		
+%	 		% legend
+	 		\node (leg) at (6,-4) {
+	 			\begin{tabular}{r|lp{0cm}r|l}
+	 				$S_k$ & Susceptible (\alert{for age group $k$})& & $\lambda_k(t)$ & Force of infection (\alert{time-dependent})\\
+	 				$E_k$ & Exposed & & $1/\tau_1+1/\tau_2$ & Incubation period (\alert{split in two})\\
+	 				$P_k$ & Presymptomatic & &$\psi$ & Proportion of symptomatic \\	
+	 				$A_k$ & Infected asymptomatic & & 	$1/\tau_2$ & Presymptomatic infectious period \\
+	 				$I_k$ & Infected symptomatic& &	 $1/\mu$ & Symptomatic infectious period \\
+	 				$R_k$ & Removed & & &\\% $\rho_k$ & Ascertainment proportion \\
+	 			%	$C_k$ & Cumulative cases  & & $\rho_k C_k$ & Cumulative confirmed cases \\
+	 		\end{tabular}};
+	 	\end{tikzpicture}
+ 	}
+ \end{figure}
+}
+
+
+
+\frame{
+	\frametitle{Model development}
+	\alert{Incubation}:
+	\begin{itemize}
+		\item \alert{SEIR}: adding a compartment \alert{$E$ for exposed}, i.e. infected but not yet symptomatic
+
+	\bigskip
+	\begin{figure}
+		\scalebox{.8}{\begin{tikzpicture}
+				% cascade of care
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (S) at (0,0) {$S$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (E) at (3,0) {$E$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (I) at (6,0) {$I$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (R) at (9,0) {$R$};
+				
+				\draw[->,>=latex] (S) edge node[above] { $\lambda$} (E);
+				\draw[->,>=latex] (E) edge node[above] { $\tau$ } (I);
+				\draw[->,>=latex] (I) edge node[above] { $\mu$ } (R);
+			\end{tikzpicture}}
+		
+		\bigskip
+	\end{figure}
+	\begin{itemize}
+	\item[-] $\tau$ is the inverse of the incubation period
+	\bigskip
+	\item[-] \alert{individuals are infectious from symptom onset} (when entering $I$)
+	$$
+	\lambda = \beta \frac{I}{N}
+	$$
+	\end{itemize}
+	\end{itemize}
+
+
+}
+
+\frame{
+	\frametitle{Model development}
+	\bigskip
+	\alert{Pre-symptomatic transmission}:
+	\begin{itemize}
+		\item \alert{SEPIR}: adding a compartment \alert{P for pre-symptomatic}, i.e. not yet symptomatic but already infectious
+		\bigskip
+	\begin{figure}
+		\scalebox{.8}{\begin{tikzpicture}
+				% cascade of care
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (S) at (0,0) {$S$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (E) at (3,0) {$E$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (P) at (6,0) {$P$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (I) at (9,0) {$I$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (R) at (12,0) {$R$};
+				
+				\draw[->,>=latex] (S) edge node[above] { $\lambda$} (E);
+				\draw[->,>=latex] (E) edge node[above] { $\tau_1$ } (P);
+				\draw[->,>=latex] (P) edge node[above] { $\tau_2$ } (I);
+				\draw[->,>=latex] (I) edge node[above] { $\mu$ } (R);
+		\end{tikzpicture}}
+		
+		\bigskip
+	\end{figure}
+	\begin{itemize}
+		\item[-] the incubation period is split in two phases with rates $\tau_1$ and $\tau_2$
+		\item[-] individuals are infectious \alert{before symptom onset} (entering $P$)
+		$$
+		\lambda = \beta \frac{P+I}{N}
+		$$
+		\item[-] we can introduce \alert{reduced transmissibility} before symptom onset
+		$$
+		\lambda = \beta \frac{\kappa P+I}{N}
+		$$
+	\end{itemize}
+\end{itemize}	
+}
+
+\frame{
+	\frametitle{Model development}
+	\bigskip
+	\alert{Asymptomatic} infections:
+	\begin{itemize}
+		\item \alert{SEPIAR}: adding a compartment \alert{A for asymptomatic}
+		\bigskip
+		\begin{figure}
+			\scalebox{.8}{\begin{tikzpicture}
+					% cascade of care
+					\node[circle, draw, inner sep=0pt, minimum size=1cm] (S) at (0,0) {$S$};
+					\node[circle, draw, inner sep=0pt, minimum size=1cm] (E) at (3,0) {$E$};
+					\node[circle, draw, inner sep=0pt, minimum size=1cm] (P) at (6,0) {$P$};
+					\node[circle, draw, inner sep=0pt, minimum size=1cm] (A) at (9,1) {$A$};
+					\node[circle, draw, inner sep=0pt, minimum size=1cm] (I) at (9,-1) {$I$};
+					\node[circle, draw, inner sep=0pt, minimum size=1cm] (R) at (12,0) {$R$};
+					
+					\draw[->,>=latex] (S) edge node[above] { $\lambda$} (E);
+					\draw[->,>=latex] (E) edge node[above] { $\tau_1$ } (P);
+					\draw[->,>=latex] (P) edge node[above] { $\phi\tau_2$ } (I);
+					\draw[->,>=latex] (P) edge node[above] { $(1-\phi)\tau_2$ } (A);
+					\draw[->,>=latex] (I) edge node[above] { $\mu$ } (R);
+					\draw[->,>=latex] (A) edge node[above] { $\mu$ } (R);
+			\end{tikzpicture}}
+			
+			\bigskip
+		\end{figure}
+		\begin{itemize}
+			\item[-] we introduce the proportion of symptomatics $\phi$
+
+			\item[-] we can introduce \alert{reduced transmissibility} for asymptomatics
+			$$
+			\lambda = \beta \frac{\kappa P+I+ \kappa A}{N}
+			$$
+		\end{itemize}
+	\end{itemize}	
+}
+
+
+\frame{
+	\frametitle{Model development}
+	\alert{Age stratification}:
+	\begin{itemize}
+		\item the \alert{transmission} of respiratory viruses (influenza virus, rhinovirus...) is {highly dependent on age} 
+		\item the \alert{mortality} of respiratory infections (even more so for SARS-CoV-2) is highly dependent on age
+		\bigskip
+		\item[$\rightarrow$] stratification in nine age groups $k\in\{1,\ldots,9\}$ for (0-9, \ldots, 80+)
+		\end{itemize}
+	\begin{figure}
+	\scalebox{.8}{\begin{tikzpicture}
+			% cascade of care
+			\node[circle, draw, inner sep=0pt, minimum size=1cm] (S) at (0,0) {$S_k$};
+			\node[circle, draw, inner sep=0pt, minimum size=1cm] (E) at (3,0) {$E_k$};
+			\node[circle, draw, inner sep=0pt, minimum size=1cm] (P) at (6,0) {$P_k$};
+			\node[circle, draw, inner sep=0pt, minimum size=1cm] (A) at (9,1) {$A_k$};
+			\node[circle, draw, inner sep=0pt, minimum size=1cm] (I) at (9,-1) {$I_k$};
+			\node[circle, draw, inner sep=0pt, minimum size=1cm] (R) at (12,0) {$R_k$};
+			
+			\draw[->,>=latex] (S) edge node[above] { $\lambda_k$} (E);
+			\draw[->,>=latex] (E) edge node[above] { $\tau_1$ } (P);
+			\draw[->,>=latex] (P) edge node[above] { $\phi\tau_2$ } (I);
+			\draw[->,>=latex] (P) edge node[above] { $(1-\phi)\tau_2$ } (A);
+			\draw[->,>=latex] (I) edge node[above] { $\mu$ } (R);
+			\draw[->,>=latex] (A) edge node[above] { $\mu$ } (R);
+	\end{tikzpicture}}
+
+	\end{figure}
+}
+
+\frame{
+	\frametitle{Model development}
+	Characterizing the \alert{force of infection}:
+	\begin{itemize}
+		\item in the simple SIR, the force of infection is defined as the rate at which susceptible individuals acquire infection
+		$$
+		\lambda = \beta \frac{I}{N}
+		$$
+		
+		\item the transmission rate $\beta$ can be split in a \alert{contact rate} $c$ times a \alert{probability of transmission upon contact} $\beta$, so that 
+		$$
+		\lambda = \beta c \frac{I}{N}
+		$$
+		
+		\faWarning\ the same symbol $\beta$ is used for the transmission rate and the probability of transmission upon contact depending on context
+	\end{itemize}
+}
+
+\frame{
+	\frametitle{Model development}	
+	\begin{itemize}	
+		\item time-dependent force of infection using a \alert{forcing function}
+		$$
+		\lambda = f(t) \beta c \frac{I}{N}
+		$$
+	\begin{itemize}
+		\item[-] to model the effect of control measures, we want a downward function that maps onto the interval $[0,1]$, e.g. a \alert{logistic function}:
+		$$
+	f(t) = \eta + \frac{1-\eta}{1+\exp(\xi(t-t_c-\nu))}
+		$$
+		
+		\item[-] $\eta$ is the \alert{relative reduction in transmission} after control measures 
+		
+		\item[-] $\xi$ is the \alert{slope} of implementation of the control measures
+		
+		\item[-] $\nu$ is the \alert{delay} until the control measures are 50\% effective (in days after $t_c$, the date of introduction of control measures).
+		
+	\end{itemize}
+	\end{itemize}
+	}
+\frame{
+	\frametitle{Model development}	
+	\begin{figure}
+		\centering
+		\only<1>{
+			with $t_c=10$; $\eta=0.25$; $\nu=3$ and $\xi=0.5$ \\ \bigskip
+		\includegraphics[width=.6\linewidth]{example_hauser/example_logfunc1.pdf}
+		}
+		\only<2>{
+			with $\eta = 0.5$ instead of $0.25$, we get \\ \bigskip
+		\includegraphics[width=.6\linewidth]{example_hauser/example_logfunc2.pdf}
+		}
+		\only<3>{
+			with $\nu = 8$ instead of $3$, we get \\ \bigskip
+			\includegraphics[width=.6\linewidth]{example_hauser/example_logfunc3.pdf}
+		}
+		\only<4>{
+			with $\xi = 1.5$ instead of $0.5$, we get \\ \bigskip
+			\includegraphics[width=.6\linewidth]{example_hauser/example_logfunc4.pdf}
+		}
+	\end{figure}
+	
+}
+
+\frame{
+	\frametitle{Model development}	
+	\begin{itemize}	
+		\item we account for \alert{behaviour differences across age groups}:
+		$$
+		\lambda_k(t) = f(t) \beta \sum_{l=1}^9  \mathds{F}_{k,l}  \dfrac{I_l}{N_l}  
+		$$
+			\begin{itemize}
+			\item[-] one force of infection for each age group $k$
+			\item[-] includes a specific contact rate between age group $k$ and each age group $l$ (corresponding to one cell of the \alert{contact matrix} $\mathds{F}_{k,l}$)
+			\item[-] includes the prevalence in age group $l$ ($I_l/N_l$)
+		
+		\end{itemize}
+	\end{itemize}
+	
+}
+\frame{
+	\frametitle{Model development}	
+	Age-specific contact matrix in China
+	\begin{figure}
+	\centering
+	\includegraphics[width=.7\linewidth]{example_hauser/contact_matrix_china.png}
+\end{figure}
+}
+
+
+\frame{
+	\frametitle{Model development}
+	Model fit to reported cases:
+	\begin{itemize}	
+	\item obtaining \alert{incidence} from the ODE output:
+
+	\begin{figure}
+		\scalebox{.8}{\begin{tikzpicture}
+				% cascade of care
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (S) at (0,0) {$S_k$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (E) at (3,0) {$E_k$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (P) at (6,0) {$P_k$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm,gray,dashed] (C) at (8.5,-2.5) {$C_k$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm,gray,dashed] (rho_C) at (12,-2.5) {$\rho_k C_k$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm,fill=white] (I) at (9,-1) {$I_k$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (A) at (9,1) {$A_k$};
+				\node[circle, draw, inner sep=0pt, minimum size=1cm] (R) at (12,0) {$R_k$};
+				
+				\draw[->,>=latex] (S) edge node[above] { $\lambda_k(t)$} (E);
+				\draw[->,>=latex] (E) edge node[above] { $\tau_1$ } (P);
+				\draw[->,>=latex] (P) edge node[yshift=10,xshift=-5] { $\tau_2(1-\psi)$ } (A);
+				\draw[->,>=latex] (P) edge node[above] { $\tau_2\psi$ } (I);
+				\draw[->,>=latex,gray,dashed] (P) edge[bend left=12] node[below] { $\tau_2\psi$ } (C);
+				\draw[->,>=latex] (A) edge node[above] { $\mu$ } (R);
+				\draw[->,>=latex] (I) edge node[above] { $\mu$ } (R);
+				\draw[double,gray] (C) -- node[above] { $\rho_k$ }  (rho_C);
+			\end{tikzpicture}
+		}
+	\end{figure}
+	\begin{itemize}	
+	\item[-] dummy compartment $C_k(t)$ records the cumulative incidence of symptomatic infections for each age group $k$
+	$$
+		\frac{dC_k}{dt} = \tau_2 \psi P_k
+		$$
+\end{itemize}
+\end{itemize}
+	
+	
+}
+
+
+\frame{
+	\frametitle{Model development}
+
+\begin{itemize}
+	\item new symptomatic infections by day of symptom onset by age:
+	$$
+		\Delta C_{k,t} =  C_k(t) - C_k(t-1) 
+	$$
+	\item \alert{new reported infections} per day of symptom onset, introducing the age-specific \alert{ascertainment proportion $\rho_k$}:
+	$$
+		A_t = \sum_k^9 \rho_k \Delta C_{k,t}^{I}
+		\label{eq:g}
+	$$
+	\item the \alert{age distribution} of all reported cases up to $t_{\text{max}}$ :
+	$$
+		B_k =  \frac{\rho_k C^I_k(t_{\text{max}})}{\sum_k^9 \rho_k C^I_k(t_{\text{max}})}
+	$$
+
+\end{itemize}
+}
+\frame{
+	\frametitle{Model development}
+
+\begin{itemize}
+
+	\item $A_t$ can be mapped to \alert{reported incidence data $\mathds{A}$} using a negative binomial likelihood:
+	$$
+	\Pr(\theta| \mathds{A}) =  \prod_{t=t_1}^{t_{\text{max}}} \text{Neg-Bin}(\mathds{A}_t| A_t,\phi_1)	
+	$$
+	
+	\item $B_k$ can be mapped to the \alert{age distribution of reported cases $\mathds{B}$} using a multinomial likelihood:
+	$$
+		\Pr(\theta| \mathds{B}) = \text{Multinomial}(\mathds{B}_1,\ldots,\mathds{B}_9|B_1,\ldots,B_9)
+	$$
+\end{itemize}
+}
+
+
+
+\frame{
+	\frametitle{Model development}
+	Model fit to deaths:
+	\begin{itemize}
+		\item mortality is considered outside of the system of ODEs, using an age-specific \alert{mortality parameter $\varepsilon_k$} (probability of death given \textit{symptomatic} infection)
+		\item we account for the delay with a discretized log-normal distribution of time from symptom onset to death $\mathds{I}$ of length 60 
+	\begin{figure}
+		\centering
+		\includegraphics[width=.6\linewidth]{example_hauser/distribution_onset_to_death.pdf}
+	\end{figure}
+
+\end{itemize}
+}
+	
+	
+\frame{
+	\frametitle{Model development}
+	\begin{itemize}
+		\item deaths in age group $k$ at time $t$ ($1\leq t \leq t_{\text{max}}+60$) among people infected up to $t_{\text{max}}$:
+		$$
+			M_{k,t}= \varepsilon_k\sum_d^{60}  \Delta C_{k,t-d} \mathds{I}_d 
+			\label{eq:h}
+		$$
+		\item deaths summed over age groups, assuming that all deaths are reported:
+		$$
+			M_{t}= \sum_k^9 M_{k,t}
+		$$
+			\item the \alert{age distribution of all deaths} occurring up to $t_{\text{max}}$:
+		$$
+		D_k = \frac{\sum_{t=1}^{t_{\text{max}}} M_{k,t}}{ \sum_{t=1}^{t_{\text{max}}} M_{t}}
+		$$
+	\end{itemize}
+}
+
+
+\frame{
+	\frametitle{Model development}
+	\begin{itemize}
+	\item $M_t$ can be mapped to \alert{daily death data $\mathds{C}$} using a negative binomial likelihood:
+	$$
+	\Pr(\theta| \mathds{C}) =  \prod_{t=t_1}^{t_{\text{max}}} \text{Neg-Bin}(\mathds{C}_t|M_t,\phi_2)
+	$$
+	
+	\item $D_k$ can be mapped to the \alert{age distribution of deaths $\mathds{D}$} using a multinomial likelihood:
+	$$
+		\Pr(\theta| \mathds{D}) = \text{Multinomial}(\mathds{D}_1,\ldots,\mathds{D}_9|D_1,\ldots,D_9)
+	$$
+	\end{itemize}
+	\bigskip
+	This leads to the following joint likelihood:
+	$$
+	\Pr(\theta | \mathds{A},\mathds{B},\mathds{C},\mathds{D}) = \Pr(\theta| \mathds{A}) \cdot \Pr(\theta| \mathds{B}) \cdot \Pr(\theta| \mathds{C}) \cdot \Pr(\theta| \mathds{D})
+	$$
+	
+	with  $\theta=\{\beta, \eta, \xi, \nu, \psi, \pi, \rho_k, \varepsilon_k, \phi_1, \phi_2 \}$.
+}
+
+
+
+\frame{
+	\frametitle{Model development}
+	Last bits:
+	\begin{itemize}
+		\item there is an \alert{identifiability issue with $\rho$}
+		\item[$\rightarrow$] fix $\rho_9$ (for 80+) to 100\%, assuming that all symptomatic infections among very high risk persons will be reported
+		\bigskip
+		\item some \alert{remaining unknowns} (data correction in China, role of children, lower $\rho_9$...)
+		\item[$\rightarrow$] sensitivity analyses
+	\end{itemize}
+}
+
+
+\frame{
+	\frametitle{Inference}
+	You know the drill:
+	\begin{itemize}
+		\item set priors
+		\item prior predictive check
+		\item sampling (on high performance computing cluster $\sim$ 2h)
+		\item basic diagnostic tests
+		\item examine trace plots and chains
+		\item posterior predictive check
+	\end{itemize}
+}
+
+
+\frame{
+	\frametitle{Results in Hubei}
+	Posterior predictive check (Hubei):
+		\begin{figure}
+		\centering
+		\includegraphics[width=1\linewidth]{example_hauser/supp_fit_16B.pdf}
+	\end{figure}
+	
+}
+
+
+\frame{
+	\frametitle{Results in Hubei}
+	Ascertainment (posteriors of $\rho_k$):
+	\begin{figure}
+		\centering
+		\includegraphics[width=.7\linewidth]{example_hauser/ascertainment.png}
+	\end{figure}
+	
+}
+
+\frame{
+	\frametitle{Results in Hubei}
+	Mortality among symptomatics or sCFR (posteriors of $\varepsilon_k$):
+	\begin{figure}
+		\centering
+		\includegraphics[width=.7\linewidth]{example_hauser/scfr.png}
+	\end{figure}
+	
+}
+
+\frame{
+	\frametitle{Results in Hubei}
+	Effect on the assumption on $\rho_9$ on IFR estimate:
+	\begin{figure}
+		\centering
+		\includegraphics[width=.7\linewidth]{example_hauser/rho9.png}
+	\end{figure}
+	
+}
+
+\frame{
+	\frametitle{Results in all regions}
+	Posterior predictive check (Spain):
+	\begin{figure}
+		\centering
+		\includegraphics[width=1.01\linewidth]{example_hauser/supp_fit_spain.pdf}
+	\end{figure}
+	
+}
+
+\frame{
+	\frametitle{Results in all regions}
+	\alert{IFR estimates} (compared to CFR and sCFR)
+	\begin{figure}
+		\centering
+		\includegraphics[width=.7\linewidth]{example_hauser/ifr_all.png}
+	\end{figure}
+	
+}
+\frame{
+	\frametitle{Results in all regions}
+	\alert{IFR estimates} by age
+	\begin{figure}
+		\centering
+		\includegraphics[width=.7\linewidth]{example_hauser/ifr_age_all.png}
+	\end{figure}
+	
+}
+\frame{
+	\frametitle{Conclusions}
+	\begin{figure}
+		\centering
+		\includegraphics[width=\linewidth]{example_hauser/table_res.png}
+	\end{figure}
+	\begin{itemize}
+		\item IFR estimates adjusted for under-ascertainment and right-censoring are \alert{more similar across countries} than CFR
+		\item still some degree of \alert{heterogeneity}
+		\item clear \alert{increase of mortality with age}
+	\end{itemize}
+}
+\frame{
+	\frametitle{Conclusions}
+	General comments:
+	\begin{itemize}
+		\item knowing the \alert{data-generating mechanisms} to avoid misinterpretation
+		\item this knowledge can be used to build a model to adjust for known biases
+		\item estimates of IFR obtained \alert{early in the epidemic}, mostly confirmed in later seroprevalence studies
+	\end{itemize}
 }
 
 
 \frame{
 	\frametitle{Acknowledgements \& ressources}
 	\begin{itemize}
+		\item Stan forums \\ \url{https://discourse.mc-stan.org/}
 		\item Michael Betancourt, \textit{Introduction to Stan} \\ \url{https://betanalpha.github.io/assets/case_studies/stan_intro.html}
 		\item Andrew Gelman et al., \textit{Bayesian workflow} \\ \url{https://arxiv.org/abs/2011.01808}
 		\item Chi Feng, \textit{MCMC interactive gallery} \\ \url{https://chi-feng.github.io/mcmc-demo/app.html}
 		\item Daniel Lee, \textit{ODEs in Stan} \\ \url{https://youtu.be/hJ34_xJhYeY}
-		\item Richard McElreath, \textit{Statistical rethinking} \url{https://youtu.be/4WVelCswXo4}
+%		\item Richard McElreath, \textit{Statistical rethinking} \url{https://youtu.be/4WVelCswXo4}
 	
 	\end{itemize}
 }

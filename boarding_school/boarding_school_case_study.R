@@ -1,6 +1,7 @@
 setwd("/home/julien/cloud/cours/bayesian_workflow_sir/boarding_school/")
 
 ## Setup ----
+library(deSolve)
 library(rstan)
 options(mc.cores = parallel::detectCores())
 library(outbreaks)
@@ -95,4 +96,109 @@ rstan::extract(fit_prior,pars="pred_cases")[[1]] %>%
   coord_cartesian(ylim=c(0,1000))
 ggsave(file="inbed_fit_prior_traj.pdf",width=4,height=3)
 
-    
+## Sim study ----
+# Set parameters 
+set.seed(2)
+pars = c(beta = 2,
+         gamma = 0.5,
+         phi=15
+)
+
+## Set initial values
+N_0 = 763
+I_0 = 1
+inits = c(
+  S = N_0 - I_0,
+  I = I_0,
+  R = 0
+)
+
+## Set model
+seir = function(t, x, parms, ...) {
+  with(as.list(c(parms, x)), {
+    dS = - beta*S*I/(S+I+R)
+    dI = beta*S*I/(S+I+R) - gamma*I
+    dR = gamma*I
+    list(c(dS, dI, dR))
+  })
+}
+
+## Simulate
+times = seq(0,14,by=1)
+sim_data = ode(inits, times, seir, pars)
+tibble(sim_data)
+
+## Add noise
+sim_data %<>%
+  as.data.frame() %>%
+  pivot_longer(2:4) %>%
+  mutate(name=factor(name,levels=c("S","I","R"),labels=c("S(t)","I(t)","R(t)"))) 
+ggplot(sim_data) +
+  geom_line(aes(x=time,y=value,color=name),size=1) +
+  scale_color_manual(values=c("chartreuse4","firebrick","steelblue")) +
+  labs(x="Time",y="Volume",color=NULL) +
+  theme(legend.position = c(.9,.5),
+        legend.background = element_blank())
+ggsave(file="example_sir1.pdf",width=4,height=2.6)
+
+
+  # Add noise
+sim_cases = sim_data %>%
+  filter(time>0,name=="I(t)") %>%
+  mutate(obs_I=rnbinom(14,mu=value,size=pars["phi"]))
+ggplot(sim_cases) +
+  geom_line(aes(x=time,y=value),colour="firebrick",size=1) +
+  geom_point(aes(x=time,y=obs_I),shape=21,size=2.3,colour="firebrick",fill="white") +
+  labs(x="Date",y="Number of students in bed")
+ggsave(file="example_sir2.pdf",width=4,height=2.6)
+
+# format sim data
+cases = sim_cases$obs_I
+n_days = 14
+t0 = 0
+t = 1:n_days
+
+# initial conditions
+i0 = 1
+s0 = N - i0
+r0 = 0
+y0 = c(s0, i0, r0)
+
+# put into list
+input_data_sim = list(T = n_days, y0 = y0, t0 = t0, ts = t, N = N, cases = cases, switch_likelihood = 1)
+
+## Sample ----
+fit_sim = stan(file='sir_negbin.stan', 
+           data=input_data_sim,
+           chains=4,
+           iter=1000)
+
+## Check diagnostics ----
+check_hmc_diagnostics(fit_sim) 
+
+ppars = data.frame(parameter=names(pars),
+                   trueval=pars)
+stan_trace(fit_sim,pars=c("beta","gamma","phi"),inc_warmup=TRUE) +
+  geom_hline(data=ppars,aes(yintercept=trueval),colour="firebrick",linetype=2)
+ggsave(file="trace_theta_sim.pdf",width=7,height=2.5)
+
+stan_dens(fit_sim,pars=c("beta","gamma","phi"),separate_chains = TRUE) +
+  geom_vline(data=ppars,aes(xintercept=trueval),colour="firebrick",linetype=2)
+ggsave(file="post_theta_sim.pdf",width=7,height=2.5)
+
+## Posterior predictive check ----
+summary(fit_sim,pars="pred_cases")[[1]] %>%
+  as.data.frame() %>%
+  bind_cols(cases=input_data$cases,
+            trueprev=sim_cases$value,
+            date=input_data$ts) %>%
+  ggplot() +
+  geom_ribbon(aes(x=date,ymin=`2.5%`,ymax=`97.5%`),alpha=.5,fill="darkcyan") +
+  geom_line(aes(x=date,y=`50%`)) +
+  geom_line(aes(x=date,y=trueprev),colour="firebrick",size=1,linetype=2) +
+  geom_point(aes(x=date,y=input_data_sim$cases),shape=21,size=2.3) +
+  labs(x="Date",y="Number of students in bed")
+ggsave(file="inbed_fit_sim.pdf",width=4,height=3)
+
+## Show results ----
+print(fit_sim,pars=c("beta","gamma","phi","R0","recovery_time"))
