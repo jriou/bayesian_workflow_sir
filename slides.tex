@@ -312,7 +312,7 @@ $$
 
 \frame{
 	\frametitle{Bayesian inference}
-	General principle of Bayesian inference:
+	General principle of Bayesian inference\footnote{Gelman et al. \textit{Bayesian Data Analysis}}$^,$\footnote{Michael Betancourt, \textit{Introduction to Stan}}:
 	\medskip
 	\begin{itemize}
 		\item[(1)] specify a complete Bayesian model
@@ -775,10 +775,11 @@ $$
 		\item[-] incomplete data, insufficient domain knowledge
 		\item[-] uncertainty on \alert{necessary model features}
 	\end{itemize}
+\bigskip
 	\alert{Fake data} can be used to probe the model and better understand its behaviour:
 	\begin{itemize}
-		\item[-] prior predictive checking
-		\item[-] simulation study
+		\item[-] prior predictive checking\footnote{Gabry et al. \textit{Visualization in Bayesian workflow}}
+		\item[-] simulation study 
 	\end{itemize}	
 }
 
@@ -902,7 +903,7 @@ $$
 		\vspace{-1em}
 	\item no identifiability issue
 	\item $\beta$ and $\gamma$ are well estimated, but $\phi$ is not
-	\item try with other values to understand \alert{when does the model break}
+	\item try with other values to understand \alert{when does the model break}\footnote{Talts et al. \textit{Simulation-based calibration}}
 	\end{itemize}
 }
 
@@ -911,7 +912,7 @@ $$
 \frame{
 	\frametitle{The Bayesian workflow}
 	
-	Bayesian \alert{workflow}: model development as an iterative process
+	Bayesian \alert{workflow}: model development as an iterative process\footnote{Gelman et al. \textit{Bayesian workflow}}
 	\begin{figure}[htbp]
 		\begin{center}
 			\scalebox{.5}{ \begin{tikzpicture}
@@ -960,7 +961,7 @@ $$
 		\item[(2)] \textit{Criticize the model} with fake data
 		\begin{itemize}
 			\item \alert{prior predictive checking}: is the model adequate?
-			\item \alert{simulation study}: does the model work as intended?
+			\item \alert{simulation-based calibration}: does the model work as intended?
 		\end{itemize}
 		
 		\item[(3)] Fit the model to real data
@@ -1693,10 +1694,10 @@ $$
 	\alert{General Bayesian inference \& \texttt{Stan}:}
 	\begin{itemize}
 		\item Andrew Gelman et al. \textit{Bayesian Data Analysis} \\ \url{http://www.stat.columbia.edu/~gelman/book/}
-		\item Stan forums \\ \url{https://discourse.mc-stan.org/}
 		\item Michael Betancourt, \textit{Introduction to Stan} \\ \url{https://betanalpha.github.io/assets/case_studies/stan_intro.html}
 		\item Andrew Gelman et al., \textit{Bayesian workflow} \\ \url{https://arxiv.org/abs/2011.01808}
-		\item Richard McElreath, \textit{Statistical rethinking} \url{https://youtu.be/4WVelCswXo4}
+		\item Jonah Gabry et al., \textit{Visualization in Bayesian workflow} \\ \url{https://arxiv.org/abs/1709.01449}
+		\item Sean Talts et al., \textit{Simulation-based calibration}  \\ \url{https://arxiv.org/abs/1804.06788}
 	
 	\end{itemize}
 }
