@@ -34,3 +34,4 @@ stan_dens(fit,pars="theta",separate_chains=TRUE) +
   geom_vline(xintercept=theta,linetype=2) 
 ggsave(file="post_theta.pdf",width=4,height=3)
 
+

@@ -19,9 +19,18 @@
 	\hfill\usebeamertemplate***{navigation symbols}
 	\hspace{1cm}\insertframenumber{}/\inserttotalframenumber}
 
+% outline
+\AtBeginSection[]
+{
+	\begin{frame}<beamer>
+		\frametitle{Outline}
+		\tableofcontents[currentsection]
+	\end{frame}
+}
+
 % define title page
-\title{Bayesian workflow for disease transmission modeling in Stan}
-\subtitle{{\small Eustat -- XXXIII International Statistical Seminar} }
+\title{Bayesian workflow for disease transmission modelling in Stan}
+\subtitle{{\small Swiss Epidemiology Winter School 2021} }
 \author{Julien Riou, MD PhD}
 \date{Institute of Social and Preventive Medicine, University of Bern, Switzerland}
 \institute{institute}
@@ -29,41 +38,32 @@
 
 % begin document
 \begin{document}
-
-\frame{\titlepage}
-
-\frame{
-	\frametitle{Preface}
-	\begin{itemize}
-		\item Objective: fit transmission models in Stan 
-		\item Based on Grinsztajn et al., 2020 (\underline{\href{https://arxiv.org/abs/2006.02985}{link}})
-		\item Prerequisites:
+	
+	\frame{\titlepage}
+	
+	\frame{
+		\frametitle{Preface}
+		\begin{itemize}
+			\item Objective: fit transmission models in Stan 
+			\item Based on Grinsztajn et al., 2020 (\underline{\href{https://arxiv.org/abs/2006.02985}{link}} -- v2 upcoming)
+			\item Prerequisites:
 			\begin{itemize}
+				\item introduction to infectious disease modelling
 				\item general understanding of Bayesian inference
 				\item basic programming with \texttt{R} and \texttt{Stan 2.21} 
 			\end{itemize}
-		\item All material is available on \url{https://github.com/jriou/bayesian_workflow}
-	\end{itemize}
-}
+			\item All material is available on \url{https://github.com/jriou/bayesian_workflow}
+		\end{itemize}
+	}
 
-\frame{
-	\frametitle{Outline}
-	\begin{itemize}
-		\item \textbf{Introduction}
-		\item (Quick notice: Bayesian inference with Stan)
-		\item Fitting a simple SIR
-		\item Simulations to understand the model
-		\item Scaling up ODE-based models
-		\item Extensions 
-	\end{itemize}
-}
+\section{Introduction}
 
 \frame{
 	\frametitle{Introduction}
 	Models of disease transmission:
 	\begin{itemize}
 		\item Interpretability: \alert{mechanistic}, phenomenological
-		\item Scale: agent-based, \alert{population-based}
+		\item Granularity: agent-based, \alert{population-based}
 		\item Framework: \alert{deterministic}, stochastic
 		\item Data-generating mechanisms: incubation, contagion, immunity...
 	\end{itemize}
@@ -299,7 +299,7 @@ $$
 	\frametitle{Introduction}
 	Enters \alert{Bayesian inference}:
 	\begin{itemize}
-		\item infer parameter values by \alert{integrating data and domain knowledge}
+		\item infer parameter values by \alert{integrating information from data and from domain knowledge}
 		\item more efficient for complex models (high dimensionality)
 		\item rigorously quantify and propagate uncertainty in parameter estimates and forecast
 	\end{itemize}
@@ -308,36 +308,88 @@ $$
 	$\rightarrow$ Markov Chain Monte Carlo (MCMC) methods and \alert{Stan}
 }
 
+\section{Basics of Bayesian inference}
+
 \frame{
-	\frametitle{Outline}
+	\frametitle{Bayesian inference}
+	General principle of Bayesian inference:
+	\medskip
 	\begin{itemize}
-		\item Introduction
-		\item \textbf{(Quick notice: Bayesian inference with Stan)}
-		\item Fitting a simple SIR
-		\item Simulations to understand the model
-		\item Scaling up ODE-based models
-		\item Extensions 
+		\item[(1)] specify a complete Bayesian model
+		\begin{itemize}
+			\item[-] consider data $y = \{y_1,...,y_n\}$ that are noisy measurement of an unknown quantity (parameter) $\theta$
+			\medskip
+			
+			\item[-] encode the data-generating processes in an \alert{observation model} (likelihood) $$p(y|\theta) = \prod_n^N \text{normal}(y_n | \theta,1)$$
+			\medskip
+			
+			\item[-] encode domain knowledge in a \alert{prior distribution}  $$p(\theta) = \text{normal}(0,1)$$
+		\end{itemize}
+	
+%		\item the model corresponds to a \alert{joint probability density function}
+%		$$
+%		p(y, \theta) = p(y|\theta)p(\theta)
+%		$$
 	\end{itemize}
 }
 
 \frame{
-	\frametitle{(Bayesian inference with Stan)}
-	General principle of Bayesian inference:
+	\frametitle{Bayesian inference}
+%	General principle of Bayesian inference:
 	\begin{itemize}
-		\item specify a complete Bayesian model
+		\item[(2)] reverse the question:
+		\medskip
+		
+		``\textit{given a model and data, \alert{what are plausible parameter values?}}"
+		\medskip
+		
 		\begin{itemize}
-			\item[-] consider data $y = \{y_1,...,y_n\}$ and parameter $\theta$
-			\item[-] specify an \alert{observation model} $$\Pr(y|\theta) = \prod_n \text{normal}(y_n | \theta,1)$$
-			\item[-] complete the model with a \alert{prior distribution} $$\Pr(\theta) = \text{normal}(0,1)$$
-		\end{itemize}
-%		\item estimate the \alert{posterior distribution of $\theta$} 
-%		$$ \Pr(\theta|y) = \frac{\Pr(y|\theta) \Pr(\theta)}{\Pr(y)}  $$
-		\item sample the \alert{posterior distribution} of the parameter
+		\item[-] the answer comes from Bayes' rule:
 	\end{itemize}
+		
+		$$
+		p(\theta \mid y) \propto p(\theta) p( y \mid \theta)
+		$$
+		\medskip
+		\begin{itemize}
+		\item[-] where $p(\theta \mid y)$ is the \alert{posterior distribution}, i.e. the set of plausible parameter values given data and model
+		
+	\end{itemize}
+	\end{itemize}
+}
+
+
+\frame{
+	\frametitle{Bayesian inference}
+	\bigskip
+	In practice, we rarely have an analytic expression for $p(\theta \mid y)$ and rely on inference algorithms to learn about the posterior distribution
+	\medskip
+	\begin{itemize}
+		\item \alert{Monte Carlo} methods
+	\end{itemize}
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.6\linewidth]{fig/Montecarlo.svg.png}
+		\caption{Monte Carlo approach to determine the area of a lake using random artillery fire.}
+	\end{figure}
+}
+
+\frame{
+	\frametitle{Bayesian inference}
+	\bigskip
+	\begin{itemize}
+		\item \alert{Markov chain Monte Carlo} (MCMC) samplers apply this principle to probability distributions
+	\end{itemize}
+	\begin{figure}
+	\centering
+	\fbox{\includegraphics[width=0.55\linewidth]{fig/mh_sampler.png}}
+	\caption{An MCMC sampler exploring a bivariate normal distribution (\url{https://chi-feng.github.io/mcmc-demo/app.html}).}
+\end{figure}
+	\centering 
 }
 %
 %\frame{
-%	\frametitle{(Bayesian inference with Stan)}
+%	\frametitle{Bayesian modelling workflow}
 %	The \alert{joint probability density function} of the model is given by
 %		$$
 %		\Pr(y, \theta)
@@ -354,12 +406,13 @@ $$
 %	$$
 %}
 
+\section{Bayesian modelling with Stan}
 
 \frame{
-	\frametitle{(Bayesian inference with Stan)}
+	\frametitle{Bayesian modelling with Stan}
 	Stan is a probabilistic programming framework for Bayesian inference
 	\begin{itemize}
-		\item it is designed to let the user \alert{focus on modeling} while inference happens under the hood
+		\item it is designed to let the user \alert{focus on modelling} while inference happens under the hood
 		\item object-oriented language (based on \texttt{C++}) that supports many  operations, probability densities and ODE solvers
 		\item extremely \alert{efficient} MCMC algorithm (Hamiltonian Monte Carlo)
 		\item \alert{diagnostic tools} to evaluate the inference
@@ -368,24 +421,23 @@ $$
 }
 
 
-
 \frame{
-	\frametitle{(Bayesian inference with Stan)}
+	\frametitle{Bayesian modelling with Stan}
 	Programming in Stan is structured in \alert{blocks}:
 	\begin{itemize}
-		\item the \texttt{data} block defines data variables
+		\item the \alert{\texttt{data}} block defines known variables and constants
 		\begin{figure}
 			\centering
 			\includegraphics[width=0.6\linewidth]{example_linear/example_linear1.png}
 		\end{figure}
 		
-		\item the \texttt{parameters} block defines parameters
+		\item the \alert{\texttt{parameters}} block defines unknown variables (parameters)
 		\begin{figure}
 			\centering
 			\includegraphics[width=0.6\linewidth]{example_linear/example_linear2.png}
 		\end{figure}
 		
-		\item the \texttt{model} block defines the \alert{target log probability density function}
+		\item the \alert{\texttt{model}} block defines the {prior distribution(s) and the observation model(s)}
 		\begin{figure}
 			\centering
 			\includegraphics[width=0.6\linewidth]{example_linear/example_linear3.png}
@@ -396,7 +448,7 @@ $$
 }
 
 \frame{
-	\frametitle{(Bayesian inference with Stan)}
+	\frametitle{Bayesian modelling with Stan}
 	We then explore the target with Stan's MCMC \alert{sampler}:
 	\begin{itemize}
 		\item load \texttt{rstan} package
@@ -420,7 +472,7 @@ $$
 }
 
 \frame{
-	\frametitle{(Bayesian inference with Stan)}
+	\frametitle{Bayesian modelling with Stan}
 	We use \alert{multiple chains} that should converge after warm-up
 	\begin{figure}
 		\centering
@@ -430,7 +482,7 @@ $$
 }
 
 \frame{
-	\frametitle{(Bayesian inference with Stan)}
+	\frametitle{Bayesian modelling with Stan}
 	The post-warm-up samples of $\theta$ approximate its \alert{posterior distribution}
 	\begin{figure}
 		\centering
@@ -439,7 +491,7 @@ $$
 }
 
 \frame{
-	\frametitle{(Bayesian inference with Stan)}
+	\frametitle{Bayesian modelling with Stan}
 	
 	We run \alert{basic diagnosis tools}: divergences, tree depth, energy
 		\begin{figure}
@@ -451,7 +503,7 @@ $$
 }
 
 \frame{
-	\frametitle{(Bayesian inference with Stan)}
+	\frametitle{Bayesian modelling with Stan}
 	
 	Printing the object gives:
 	\begin{itemize}
@@ -465,17 +517,7 @@ $$
 	\end{itemize}
 }
 
-\frame{
-	\frametitle{Outline}
-	\begin{itemize}
-		\item Introduction
-		\item (Quick notice: Bayesian inference with Stan)
-		\item \textbf{Fitting a simple SIR}
-		\item Simulations to understand the model
-		\item Scaling up ODE-based models
-		\item Extensions 
-	\end{itemize}
-}
+\section{Fitting a simple SIR model}
 
 \frame{
 	\frametitle{Fitting a simple SIR}
@@ -724,20 +766,10 @@ $$
 		
 }
 
-\frame{
-	\frametitle{Outline}
-	\begin{itemize}
-		\item Introduction
-		\item (Quick notice: Bayesian inference with Stan)
-		\item Fitting a simple SIR
-		\item \textbf{Simulations to understand the model}
-		\item Scaling up ODE-based models
-		\item Extensions 
-	\end{itemize}
-}
+\section{Simulation-based model assessment}
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	In practice, the situation is often less clear than in the boarding school example:
 	\begin{itemize}
 		\item[-] incomplete data, insufficient domain knowledge
@@ -751,7 +783,7 @@ $$
 }
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	\alert{Prior predictive checking} consists in simulating data from the priors:
 	\begin{itemize}
 		\item visualize priors (especially after transformation)
@@ -767,7 +799,7 @@ $$
 }
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	Simulating priors in the boarding school example:
 	\begin{figure}
 		\centering
@@ -776,7 +808,7 @@ $$
 }
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	Prior predictive checking: simulating \alert{epidemic trajectories}
 	\begin{figure}
 		\centering
@@ -786,7 +818,7 @@ $$
 }
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	Prior predictive checking brings insight about \alert{non-obvious features}:
 	\begin{itemize}
 		\item even if the priors seem weakly informative, there is actually not a lot of leeway
@@ -800,7 +832,7 @@ $$
 }
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	A \alert{simulation study} consists in two steps:
 	\begin{itemize}
 		\item simulate data with specified parameter values
@@ -817,7 +849,7 @@ $$
 }
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	Let's go back to the \alert{simple SIR example} from the beginning:
 	\begin{itemize}
 		\item set $\beta=2$ and $\gamma=0.5$ (so that $\mathcal{R}_0=4$) 
@@ -830,7 +862,7 @@ $$
 }
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	Add noise with a \alert{negative binomial} distribution with $\phi=15$
 	\begin{figure}
 		\centering
@@ -839,7 +871,7 @@ $$
 }
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	Fit the \alert{same model} as for the boarding school example
 	\begin{figure}
 		\centering
@@ -849,7 +881,7 @@ $$
 
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	Posterior predictive checking
 	\begin{figure}
 		\centering
@@ -859,7 +891,7 @@ $$
 
 
 \frame{
-	\frametitle{Simulations to understand the model}
+	\frametitle{Simulation-based model assessment}
 	\bigskip
 	Compare the posterior distributions of the parameters with the \alert{``truth''}
 	\begin{figure}
@@ -874,17 +906,78 @@ $$
 	\end{itemize}
 }
 
+\section{The Bayesian workflow}
+
 \frame{
-	\frametitle{Outline}
+	\frametitle{The Bayesian workflow}
+	
+	Bayesian \alert{workflow}: model development as an iterative process
+	\begin{figure}[htbp]
+		\begin{center}
+			\scalebox{.5}{ \begin{tikzpicture}
+					[
+					Box/.style={rectangle, draw=black!, minimum size=10mm, text width=22mm,text centered},
+					Box2/.style={rectangle, draw=black!, fill=gray!20, minimum size=10mm, text width=20mm,text centered,rounded corners},
+					Round/.style={circle, draw=black!, fill=green!0, minimum size=1mm},
+					]
+					% Nodes
+					\node[Round] (Data) at(3, -4) {Data};
+					\node[Box] (Model) at(-4, 0) {Build model};
+					\node[Box2] (Crit1) at (0, 0) {Criticize model};
+					\node[Box] (Infer) at (0, -2) {Fit model};
+					\node[Box2] (Crit2) at (4, -2) {Criticize inference};
+					\node[Box2] (Crit3) at (8, -2) {Criticize fitted model};
+					\node[Box] (App) at (8,-4) {Apply fitted model};
+					
+					% Lines
+					\path [->, draw] (Model) -- (Crit1);
+					\path [->, draw] (Crit1) -- (Infer);
+					\path [->, draw] (Infer) -- (Crit2);
+					\path [->, draw] (Crit2) -- (Crit3);
+					\path [->, draw] (Crit3) -- (App);
+					\path [->, draw] (Crit1) edge[bend right=20] (Model);
+					\path [->, draw] (Crit2) edge[bend right=40] (Infer);
+					\path [->, draw] (Crit2) edge[bend right=40] (Model);
+					\path [->, draw] (Crit3) edge[bend right=42] (Model);
+					\path [->, draw, dotted] (Data) -- (Infer);
+					\path [->, draw, dotted] (Data) -- (Crit2);
+					\path [->, draw, dotted] (Data) -- (Crit3);
+			\end{tikzpicture}}
+		\end{center}
+	\end{figure}
+}
+
+
+\frame{
+	\frametitle{The Bayesian workflow}
 	\begin{itemize}
-		\item Introduction
-		\item (Quick notice: Bayesian inference with Stan)
-		\item Fitting a simple SIR
-		\item {Simulations to understand the model}
-		\item \textbf{Scaling up ODE-based models}
-		\item Extensions 
+		\item[(1)] Build a complete model: 
+		\begin{itemize}
+			\item encode the data-generating processes with observation models
+			\item encode domain knowledge with prior distributions
+		\end{itemize}
+			
+		\item[(2)] \textit{Criticize the model} with fake data
+		\begin{itemize}
+			\item \alert{prior predictive checking}: is the model adequate?
+			\item \alert{simulation study}: does the model work as intended?
+		\end{itemize}
+		
+		\item[(3)] Fit the model to real data
+		\item[(4)] \textit{Criticize the inference}
+		\begin{itemize}
+			\item \alert{chain mixing} (trace plots, posteriors by chain, \texttt{Rhat})
+			\item \alert{basic diagnosis tools} (divergences, energy, \texttt{n\_eff})
+		\end{itemize}
+		\item[(5)] \textit{Ciriticize fitted model}
+		\begin{itemize} 
+		\item \alert{posterior predictive checking}
+		\end{itemize}
+		\item[(6)] Application (inference, forecast...)
 	\end{itemize}
 }
+
+\section{Scaling-up ODE-based models}
 
 \frame{
 	\frametitle{Scaling up ODE-based models}
@@ -966,17 +1059,7 @@ $$
 	\vspace{.2em}$\rightarrow$ this can be solved by \alert{adding 5-10 times the absolute tolerance} to the ODE output
 }
 
-\frame{
-	\frametitle{Outline}
-	\begin{itemize}
-		\item Introduction
-		\item (Quick notice: Bayesian inference with Stan)
-		\item Fitting a simple SIR
-		\item {Simulations to understand the model}
-		\item {Scaling up ODE-based models}
-		\item \textbf{Extensions} 
-	\end{itemize}
-}
+\section{Extensions}
 
 \frame{
 	\frametitle{Extensions}
@@ -1032,6 +1115,7 @@ $$
 	\end{itemize}
 }
 
+\subsection{Objectives}
 \frame{
 	\frametitle{Objectives}
 	\begin{itemize}
@@ -1606,16 +1690,30 @@ $$
 
 \frame{
 	\frametitle{Acknowledgements \& ressources}
+	\alert{General Bayesian inference \& \texttt{Stan}:}
 	\begin{itemize}
+		\item Andrew Gelman et al. \textit{Bayesian Data Analysis} \\ \url{http://www.stat.columbia.edu/~gelman/book/}
 		\item Stan forums \\ \url{https://discourse.mc-stan.org/}
 		\item Michael Betancourt, \textit{Introduction to Stan} \\ \url{https://betanalpha.github.io/assets/case_studies/stan_intro.html}
 		\item Andrew Gelman et al., \textit{Bayesian workflow} \\ \url{https://arxiv.org/abs/2011.01808}
-		\item Chi Feng, \textit{MCMC interactive gallery} \\ \url{https://chi-feng.github.io/mcmc-demo/app.html}
-		\item Daniel Lee, \textit{ODEs in Stan} \\ \url{https://youtu.be/hJ34_xJhYeY}
-%		\item Richard McElreath, \textit{Statistical rethinking} \url{https://youtu.be/4WVelCswXo4}
+		\item Richard McElreath, \textit{Statistical rethinking} \url{https://youtu.be/4WVelCswXo4}
 	
 	\end{itemize}
 }
+
+
+\frame{
+	\frametitle{Acknowledgements \& ressources}
+	\alert{\texttt{Stan} and ODEs or infectious disease models:}
+	\begin{itemize}
+		\item Daniel Lee, \textit{ODEs in Stan} \\ \url{https://youtu.be/hJ34_xJhYeY}
+		\item Chatzilena et al., \textit{Contemporary statistical inference for ID models} \\
+		\url{https://www.sciencedirect.com/science/article/pii/S1755436519300325}
+		\item Bob Carpenter, \textit{Population dynamics: the Lotka-Volterra model} \\ \url{https://mc-stan.org/users/documentation/case-studies/lotka-volterra-predator-prey.html}
+		\item Grinsztajn et al., \textit{Bayesian workflow for disease transmission modeling in Stan} \\ \url{https://arxiv.org/abs/2006.02985}
+	\end{itemize}
+}
+
 
 
 \end{document}
