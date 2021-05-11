@@ -1,7 +1,7 @@
 \documentclass{beamer}
 
 % choose theme (warning, to use the UniBern theme you need to copy the files beamerthemeUniBern.sty and ublogo.pdf in the same directory)
-\usetheme{UniBern}
+\usecolortheme{spruce}
 
 % packages
 
@@ -19,12 +19,25 @@
 	\hfill\usebeamertemplate***{navigation symbols}
 	\hspace{1cm}\insertframenumber{}/\inserttotalframenumber}
 
+% options
+\setbeamerfont{caption}{size=\scriptsize}
+\AtBeginSection[] {
+	\begin{frame}<beamer>
+		\frametitle{Outline}
+		\tableofcontents[currentsection]
+	\end{frame}
+}
+\setbeamertemplate{sidebar right}{}
+\setbeamertemplate{footline}{%
+	\hfill\usebeamertemplate***{navigation symbols}
+	\hspace{1cm}\insertframenumber{}/\inserttotalframenumber}
+
+
 % define title page
 \title{Bayesian workflow for disease transmission modeling in Stan}
-\subtitle{{\small Eustat -- XXXIII International Statistical Seminar} }
 \author{Julien Riou, MD PhD}
-\date{Institute of Social and Preventive Medicine, University of Bern, Switzerland}
-\institute{institute}
+\date{ Advanced statistical methods for physicists}
+\institute{}
 
 
 % begin document
@@ -36,9 +49,10 @@
 	\frametitle{Preface}
 	\begin{itemize}
 		\item Objective: fit transmission models in Stan 
-		\item Based on Grinsztajn et al., 2020 (\underline{\href{https://arxiv.org/abs/2006.02985}{link}})
+		\item Based on Grinsztajn et al., 2020 (\underline{\href{https://arxiv.org/abs/2006.02985}{link}} -- v2 upcoming)
 		\item Prerequisites:
 			\begin{itemize}
+				\item introduction to infectious disease modelling
 				\item general understanding of Bayesian inference
 				\item basic programming with \texttt{R} and \texttt{Stan 2.21} 
 			\end{itemize}
