@@ -1,0 +1,106 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
+\usepackage{color}
+
+\newcounter{question}
+\newcommand{\name}{00}
+
+\renewcommand{\thefigure}{R\arabic{figure}}
+\renewcommand{\thetable}{R\arabic{table}}
+
+\newcommand{\question}[1]{\stepcounter{question} \noindent \textbf{Comment \name.\thequestion} \emph{#1} }
+
+\newcommand{\answer}[1]{\noindent \textbf{Answer to \name.\thequestion} #1 \mbox{}\\}
+
+\newcommand{\newperson}[2]{\renewcommand{\name}{#2} \setcounter{question}{0} \newpage \noindent \textbf{\Large Answers to #1} \\}
+
+\begin{document}
+	
+	{\large \textbf{Response to the comments about
+			the submitted paper \emph{``Bayesian workflow for disease transmission modeling in
+				Stan''
+		}}}
+	
+	\vspace{3em}
+	
+	
+	We thank the reviewers for their constructive comments. We have
+	addressed all of them and modified the paper accordingly. Our
+	detailed answers follow. 
+	Please note that reviewers' comments are in italics while our
+	answers are not. 
+	
+	
+	\newperson{Reviewer 1}{R1}
+	
+%	\question{The paper is topical, very well written, balanced and cites the important related literature. General Bayesian workflow has been discussed also elsewhere, but the use of the domain specific example makes presentation more approachable and well targeted for the readers of Statistics in Medicine. I would be happy to see this published as is with just one tiny minor comment the authors could fix without need for re-review.}
+%	
+%	\answer{}
+	
+	\question{The Rhat shown in the Stan diagnostics table on page 11 is version 4 of Rhat, while Gelman and Rubin presented the version 1. After Gelman and Rubin's first version there have been many improvements, and calling the shown Rhat as Gelman-Rubin ratio is misleading. The Rhat version shown in the table on page 11 is described in Gelman et al, 2013 (BDA3) and in Stan user guide.}
+	
+	\answer{We agree with reviewer 1, the correct reference for improved r-hat is Vehtari et al, 2020.}
+	
+	\newperson{Reviewer 2}{R2}
+	
+	\question{The authors evidently assume that the reader is familiar with both Bayesian statistical
+		modeling and the Stan software environment. But it Sections 2.1 and 2.2., the authors
+		present the Bayesian idea as if it is entirely new to the reader, going so far as to
+		define the posterior distribution and the “proportional to” notation. But further in the
+		manuscript (e.g., Section 4.3), the authors discuss setting up a Stan model as if the
+		reader already knows the general procedure for doing this and how to interface it with,
+		e.g., R. I would think that if one knows how to use Stan as well as the authors assume,
+		then one almost certainly has a working knowledge of Bayesian statistics. Indeed,
+		in Section 4.2, the authors very casually mention weakly informative priors without
+		defining them or their use. This seems like a big leap from having to define the $\propto$
+		notation just a few pages earlier. I think the paper could be strengthened perhaps by
+		swapping things around here. It’s OK to assume the reader is familiar with Bayesian
+		modeling, but maybe spend more time on how one installs and sets up Stan? This
+		approach would be more likely to attract readers like myself who are quite familiar
+		with Bayesian statistics but have extremely limited knowledge of Stan. In its current
+		form, if one is not familiar with Stan, they will be completely lost.}
+	
+	\answer{Answer}
+	
+		\question{Similarly, as part of introducing Stan to the broader readership, a little more time
+			could be spent convincing the reader why it’s worthwhile; i.e., why Hamiltonian Monte
+			Carlo (HMC) works and under what circumstances it is likely to be effective (high-
+			dimensional parameter spaces? Multi-modal posteriors? Disconnected support? etc.).
+			Again, it strikes me as odd that the authors spend pretty much no time at all reviewing
+			HMC, but then feel the need to define the Gelman-Rubin Rhat statistic and effective
+			sample size.}
+	
+	\answer{Answer}
+	
+	\question{At times the paper feels more like an applied mathematics paper dealing with systems
+		of ODEs for disease spread than a statistics paper for Bayesian modeling. While I
+		think it’s fine to assume some familiarity with differential equations, perhaps a little
+		more effort could be spent on discussing numerical solvers, particularly those that are
+		employed in Stan. Much less effort, if any at all, needs to be spent on more tangential
+		points. For instance, on my reading of the tutorial, I did not really see what Section
+		5.3 added to the paper. It seems irrelevant to someone looking to do model building
+		with Stan.}
+	
+	\answer{Answer}
+	
+	\question{In the last paragraph before Section 4.6.2 on page 10, the authors give the impression
+		that difficulties with MCMC mixing are always due to the model, and never to the
+		chosen algorithm. I understand what they are saying and it is a good point. At the
+		same time, though, I do not believe in a one-size-fits-all approach to MCMC. My
+		experience has been that quite often the algorithm itself should be carefully thought
+		out, in addition to the model itself; e.g., marginalization, adaptive Metropolis, delayed
+		rejection, ordinary Gibbs, etc., etc. all have their uses. HMC is certainly a powerful
+		MCMC framework, but it’s not the solution to every problem. I don’t think the reader
+		should be given an impression to the contrary.}
+	
+	\answer{Answer}
+	
+	\question{First paragraph of Section 5: I think “ripe” should be “reap.”}
+	
+	\answer{Answer}
+	
+	\bibliography{Mendeley}
+	\bibliographystyle{ieeetr}
+	
+\end{document}

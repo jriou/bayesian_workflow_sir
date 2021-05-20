@@ -4,22 +4,8 @@
 library(deSolve)
 library(tidyverse)
 
-## Set parameters ----
-pars = c(beta = 0.8,
-         gamma = 1/7
-)
-
-## Set initial values ----
-N_0 = 100000
-I_0 = 50
-inits = c(
-  S = N_0 - I_0,
-  I = I_0,
-  R = 0
-)
-
 ## Set model ----
-seir = function(t, x, parms, ...) {
+sir = function(t, x, parms, ...) {
   with(as.list(c(parms, x)), {
     dS = - beta*S*I/(S+I+R)
     dI = beta*S*I/(S+I+R) - gamma*I
@@ -28,9 +14,19 @@ seir = function(t, x, parms, ...) {
   })
 }
 
+## Set parameters ----
+pars = c(beta = 0.8, gamma = 1/7)
+
+## Set initial values ----
+N_0 = 100000
+I_0 = 50
+inits = c(S = N_0 - I_0,
+          I = I_0,
+          R = 0)
+
 ## Simulate ----
 times = seq(0,50,by=1)
-sim_data = ode(inits, times, seir, pars,method="rk4")
+sim_data = ode(inits, times, sir, pars,method="rk4")
 tibble(sim_data)
 
 ## Plot ----
@@ -52,7 +48,7 @@ pars = c(beta = 1.1,
 )
 
 ## Simulate ----
-sim_data2 = ode(inits, times, seir, pars,method="rk4")
+sim_data2 = ode(inits, times, sir, pars,method="rk4")
 tibble(sim_data2)
 
 ## Plot ----
@@ -76,7 +72,7 @@ pars = c(beta = 0.6,
 )
 
 ## Simulate ----
-sim_data2 = ode(inits, times, seir, pars,method="rk4")
+sim_data2 = ode(inits, times, sir, pars,method="rk4")
 tibble(sim_data2)
 
 ## Plot ----
@@ -99,7 +95,7 @@ pars = c(beta = 0.8,
 )
 
 ## Simulate ----
-sim_data2 = ode(inits, times, seir, pars,method="rk4")
+sim_data2 = ode(inits, times, sir, pars,method="rk4")
 tibble(sim_data2)
 
 ## Plot ----
@@ -122,7 +118,7 @@ pars = c(beta = 0.8,
 )
 
 ## Simulate ----
-sim_data2 = ode(inits, times, seir, pars,method="rk4")
+sim_data2 = ode(inits, times, sir, pars,method="rk4")
 tibble(sim_data2)
 
 ## Plot ----
@@ -153,7 +149,7 @@ inits = c(
   R = 0
 )
 ## Simulate ----
-sim_data2 = ode(inits, times, seir, pars,method="rk4")
+sim_data2 = ode(inits, times, sir, pars,method="rk4")
 tibble(sim_data2)
 
 ## Plot ----
@@ -183,7 +179,7 @@ inits = c(
   R = 0
 )
 ## Simulate ----
-sim_data2 = ode(inits, times, seir, pars,method="rk4")
+sim_data2 = ode(inits, times, sir, pars,method="rk4")
 tibble(sim_data2)
 
 ## Plot ----
@@ -214,7 +210,7 @@ inits = c(
   R = R_0
 )
 ## Simulate ----
-sim_data2 = ode(inits, times, seir, pars,method="rk4")
+sim_data2 = ode(inits, times, sir, pars,method="rk4")
 tibble(sim_data2)
 
 ## Plot ----
