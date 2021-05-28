@@ -5,8 +5,8 @@ library(deSolve)
 library(tidyverse)
 
 ## Set model ----
-sir = function(t, x, parms, ...) {
-  with(as.list(c(parms, x)), {
+sir = function(t, x, pars, ...) {
+  with(as.list(c(x, pars)), {
     dS = - beta*S*I/(S+I+R)
     dI = beta*S*I/(S+I+R) - gamma*I
     dR = gamma*I
@@ -26,7 +26,7 @@ inits = c(S = N_0 - I_0,
 
 ## Simulate ----
 times = seq(0,50,by=1)
-sim_data = ode(inits, times, sir, pars,method="rk4")
+sim_data = ode(inits, times, sir, pars, method="rk4")
 tibble(sim_data)
 
 ## Plot ----
