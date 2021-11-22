@@ -1,7 +1,5 @@
 # Bayesian workflow for disease transmission modelling in Stan
 
-Julien Riou
-
 This repository contains the ressources and material for a course
 focusing on how to fit transmission models in Stan. It is based
 mainly on two papers:
