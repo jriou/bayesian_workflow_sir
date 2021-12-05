@@ -11,6 +11,7 @@
 \usepackage{dsfont} % show code
 \usepackage{fontawesome}
 \usepackage{tikz}
+\usepackage{amsmath}
 
 % slide numbering
 \setbeamertemplate{sidebar right}{}
@@ -327,14 +328,19 @@ $$
 \section{Bayesian inference with Stan}
 
 \frame{
+	\frametitle{Bayesian inference}
+   $$\underbrace{p(\theta|y)}_{\text{posterior}} \propto \underbrace{p(y| \theta)}_{\text{likelihood}} \underbrace{p(\theta)}_{\text{prior}}$$
+}
+
+\frame{
 	\frametitle{General principle}
 	General principle of Bayesian inference:
 	\begin{itemize}
 		\item specify a complete Bayesian model
 		\begin{itemize}
 			\item[-] consider data $y = \{y_1,...,y_n\}$ and parameter $\theta$
-			\item[-] specify an \alert{observation model} $$\Pr(y|\theta) = \prod_n \text{normal}(y_n | \theta,1)$$
-			\item[-] complete the model with a \alert{prior distribution} $$\Pr(\theta) = \text{normal}(0,1)$$
+			\item[-] specify an \alert{observation model, e.g.} $$p(y|\theta) = \prod_n \text{normal}(y_n | \theta,1)$$
+			\item[-] complete the model with a \alert{prior distribution, e.g.} $$p(\theta) = \text{normal}(0,1)$$
 		\end{itemize}
 %		\item estimate the \alert{posterior distribution of $\theta$} 
 %		$$ \Pr(\theta|y) = \frac{\Pr(y|\theta) \Pr(\theta)}{\Pr(y)}  $$
@@ -359,8 +365,21 @@ $$
 
 
 \frame{
+	\frametitle{Stan program structure}
+	A Stan program is structured in \alert{blocks}:
+	\begin{itemize}
+	    \item  \texttt{functions} 
+		\item  \texttt{data} 
+		\item  \texttt{transformed data} 
+		\item  \texttt{parameters} 
+		\item  \texttt{transformed parameters} 
+		\item  \texttt{model} 
+        \item  \texttt{generated quantities} 
+	\end{itemize}
+}
+
+\frame{
 	\frametitle{Stan example}
-	Programming in Stan is structured in \alert{blocks}:
 	\begin{itemize}
 		\item the \texttt{data} block defines data variables
 		\begin{figure}
@@ -383,6 +402,7 @@ $$
 	
 	\end{itemize}
 }
+
 
 \frame{
 	\frametitle{Stan example}
@@ -410,7 +430,7 @@ $$
 
 \frame{
 	\frametitle{Stan example}
-	We use \alert{multiple chains} that should converge after warm-up
+	We use \alert{multiple chains} and inspect convergence after warm-up
 	\begin{figure}
 		\centering
 		\only<1>{\includegraphics[width=.6\linewidth]{example_linear/trace_theta.pdf}}
@@ -430,7 +450,7 @@ $$
 \frame{
 	\frametitle{Stan example}
 	
-	We run \alert{basic diagnosis tools}: divergences, tree depth, energy
+	We run \alert{basic diagnostics tools}: divergences, tree depth, energy
 		\begin{figure}
 			\centering
 			\vspace{1em}
@@ -476,20 +496,25 @@ $$
 	Points to consider:
 	\begin{itemize}
 		\item prevalence data: $\mathds{I}_{t}$ with $t \in \{1,\ldots,14\}$
-		\item parameters to estimate: $\theta = \{\beta,\gamma,\phi\}$
-		\item parameters that will remain fixed: $\{S_0=762,I_0=1,R_0=0\}$
+		\item inputs that will remain fixed: $\{S_0=762,I_0=1,R_0=0\}$
 		\item map data $\mathds{I}_{t}$ to SIR model output $I(t)$ using an observation model  with an appropriate \alert{probability distribution}:
 		$$
-		\Pr(\mathds{I}|\theta) = \prod_{t=1}^{14} \text{neg-bin}(\mathds{I}_{t} | I(t), \phi)
+		p(\mathds{I}|\theta) = \prod_{t=1}^{14} \text{NegBinomial}(\mathds{I}_{t} | I(t), \phi)
 		$$
+		\item parameters to estimate: $\theta = \{\beta,\gamma,\phi\}$
 		\item \alert{prior distributions} 
 		\vspace{-1em}
-		
-		$$\Pr(\beta) = \text{exponential}(1)$$
-		$$\Pr(1/\gamma) = \text{normal}(2,0.5)$$
-		$$\Pr(1/\phi) = \text{exponential}(5)$$
+		$$p(\beta) = \text{Exponential}(1)$$
+		$$p(1/\gamma) = \text{Normal}(2,0.5)$$
+		$$p(1/\phi) = \text{Exponential}(5)$$
 	\end{itemize}
 }
+
+\frame{
+	\frametitle{Code the model}
+	\faWarning\ Note that further we are using ODE signature as presented in the paper. Since then a new interface has become available.
+}
+
 
 \frame{
 	\frametitle{Code the model}
@@ -510,7 +535,7 @@ $$
 		\end{figure}
 	
 	\pause
-	and define additional data variables in \texttt{transformed data}
+	and define additional data variables in \texttt{transformed data} block
 	\begin{figure}
 		\centering
 		\includegraphics[width=1\linewidth]{boarding_school/stan_code3.png}
@@ -543,9 +568,8 @@ $$
 		\centering
 		\includegraphics[width=.8\linewidth]{boarding_school/stan_code5bis.png}
 	\end{figure}
-	Two crucial points:
 	\begin{itemize}
-	\item be careful about the \alert{formats and signatures}
+	\item Be careful about the \alert{formats and signatures}
 	\begin{itemize}
 			\item[-] the ODE output \texttt{y} is an array of size \texttt{T}$\times$3 (number of time steps and number of compartments)
 			\item[-] \texttt{sir} is the name of the function defined in the \texttt{function} block
@@ -563,12 +587,16 @@ $$
 		\centering
 		\includegraphics[width=.8\linewidth]{boarding_school/stan_code5bis.png}
 	\end{figure}
-	Two crucial points:
 	\begin{itemize}
-		\item two ODE solvers are available:
+		\item Chose an ODE solver. In the previous interface:
 	\begin{itemize}
 		\item[-] \texttt{integrate\_ode\_rk45} uses the Runge-Kutta method (quicker but non-adapted to stiff systems)
 		\item[-] \texttt{integrate\_ode\_bdf} uses the backward differentiation method (slower but adapted to stiff systems)
+	\end{itemize}
+	    \item In the new interface:
+	\begin{itemize}
+	    \item[-] \texttt{ode\_bdf}, \texttt{ode\_adams}, \texttt{ode\_rk45}, 
+	    \item[-] \texttt{ode\_bdf\_tol},\texttt{ode\_adams\_tol}, \texttt{ode\_rk45\_tol}
 	\end{itemize}
 	\end{itemize}
 }
@@ -640,7 +668,7 @@ $$
 
 \frame{
 	\frametitle{Diagnostics}
-	Run basic diagnosis tools:
+	Use the basic diagnostics tools:
 	\begin{figure}
 		\centering
 		\includegraphics[width=1\linewidth]{boarding_school/r_code3.png}
@@ -703,18 +731,51 @@ $$
 		
 }
 
-\section{Using simulations to understand the model}
+
+\section{Bayesian workflow}
 
 \frame{
-	\frametitle{Model development}
+	\frametitle{Box's loop}
 	In practice, the situation is often less clear than in the boarding school example:
 	\begin{itemize}
 		\item[-] incomplete data, insufficient domain knowledge
 		\item[-] uncertainty on \alert{necessary model features}
+	\end{itemize}	
+}
+
+\frame{
+	\frametitle{Box's loop}
+	\begin{figure}
+		\centering
+		\includegraphics[width=.8\linewidth]{boarding_school/Boxes_loop.png}
+	\end{figure}
+}
+
+\frame{
+	\frametitle{Box's loop}
+	\begin{figure}
+		\centering
+		\includegraphics[width=.8\linewidth]{boarding_school/Boxes_loop.png}
+	\end{figure}
+}
+
+\frame{
+	\frametitle{Model development}
+	Model development is an iterative procedure:
+	\begin{itemize}
+		\item[-] troubleshoot the model before fitting it,
+		\item[-] criticize the inference after attempting a fit,
+		\item[-] criticize the fitted model.
 	\end{itemize}
+}
+
+\section{Using simulations to understand the model}
+
+\frame{
+	\frametitle{Model development}
 	\alert{Fake data} can be used to probe the model and better understand its behaviour:
 	\begin{itemize}
-		\item[-] prior predictive checking
+		\item[-] prior predictive checks
 		\item[-] simulation study
 	\end{itemize}	
 }
@@ -746,7 +807,7 @@ $$
 
 \frame{
 	\frametitle{Prior predictive checks}
-	Prior predictive checking: simulating \alert{epidemic trajectories}
+	Prior predictive check: simulating potential \alert{epidemic trajectories}
 	\begin{figure}
 		\centering
 		\only<1>{\includegraphics[width=.6\linewidth]{boarding_school/inbed_fit_prior.pdf}}
@@ -756,7 +817,7 @@ $$
 
 \frame{
 	\frametitle{Prior predictive checks}
-	Prior predictive checking brings insight about \alert{non-obvious features}:
+	Prior predictive checks bring insight about \alert{non-obvious features}:
 	\begin{itemize}
 		\item even if the priors seem weakly informative, there is actually not a lot of leeway
 		\item \alert{highly constrained} model: 
@@ -764,13 +825,13 @@ $$
 		\item[-] if $\beta$ is high, the epidemic will stop rapidly by lack of susceptibles
 		\item[-] if $\beta$ is small, the epidemic will be small
 	\end{itemize}
-	\item the negative binomial might lead to problems in extreme situations, e.g. more cases (>1000) than the overall number of students
+	\item the negative binomial distribution might lead to problems in extreme situations, e.g. more cases ($>$1000) than the overall number of students
 	\end{itemize}
 }
 
 \frame{
 	\frametitle{Simulation-based checks}
-	A \alert{simulation study} consists in two steps:
+	A \alert{simulation study} consists out of two steps:
 	\begin{itemize}
 		\item simulate data with specified parameter values
 		\item measure the capacity of the model to recover the chosen parameter values
@@ -972,13 +1033,12 @@ $$
 \frame{
 	\frametitle{Acknowledgements \& ressources}
 	\begin{itemize}
-		\item Stan forums \\ \url{https://discourse.mc-stan.org/}
 		\item Michael Betancourt, \textit{Introduction to Stan} \\ \url{https://betanalpha.github.io/assets/case_studies/stan_intro.html}
 		\item Andrew Gelman et al., \textit{Bayesian workflow} \\ \url{https://arxiv.org/abs/2011.01808}
 		\item Chi Feng, \textit{MCMC interactive gallery} \\ \url{https://chi-feng.github.io/mcmc-demo/app.html}
 		\item Daniel Lee, \textit{ODEs in Stan} \\ \url{https://youtu.be/hJ34_xJhYeY}
-     	\item Richard McElreath, \textit{Statistical rethinking} \url{https://youtu.be/4WVelCswXo4}
-	
+		\item Ben Bales, Sebastian Weber
+, \textit{Upgrading to the new ODE interface} \\ \url{https://mc-stan.org/users/documentation/case-studies/convert_odes.html}
 	\end{itemize}
 }
 
