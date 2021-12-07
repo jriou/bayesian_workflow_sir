@@ -447,17 +447,17 @@ $$
 	\end{figure}
 }
 
-\frame{
-	\frametitle{Stan example}
+%\frame{
+%	\frametitle{Stan example}
 	
-	We run \alert{basic diagnostics tools}: divergences, tree depth, energy
-		\begin{figure}
-			\centering
-			\vspace{1em}
-			\includegraphics[width=.8\linewidth]{example_linear/run_stan5.png}
-		\end{figure}
+%	We run \alert{basic diagnostics tools}: divergences, tree depth, energy
+%		\begin{figure}
+%			\centering
+%			\vspace{1em}
+%			\includegraphics[width=.8\linewidth]{example_linear/run_stan5.png}
+%		\end{figure}
 
-}
+%}
 
 \frame{
 	\frametitle{Stan example}
@@ -505,7 +505,7 @@ $$
 		\item \alert{prior distributions} 
 		\vspace{-1em}
 		$$p(\beta) = \text{Exponential}(1)$$
-		$$p(1/\gamma) = \text{Normal}(2,0.5)$$
+		$$p(1/\gamma) = \text{Normal}^+(2,0.5)$$
 		$$p(1/\phi) = \text{Exponential}(5)$$
 	\end{itemize}
 }
@@ -611,7 +611,7 @@ $$
 	\faWarning\ It's important that the chosen distributions correspond with the boundaries set in the \texttt{parameters} block (\texttt{<lower=0>})
 
 \bigskip
-	\faWarning\ \texttt{col(to\_to\_matrix(y))} extracts the 2nd column of \texttt{y}
+	\faWarning\ \texttt{col(to\_matrix(y))} extracts the 2nd column of \texttt{y}
 }
 
 
@@ -715,11 +715,11 @@ $$
 	\frametitle{Results}
 	\begin{itemize}
 		\item we estimate $\mathcal{R}_0$ to 3.3 (95\% credible interval: 2.8 to 4.0)
-		\item this corresponds to the direct estimation from the final size of the epidemic $q = 512/763 = 0.67$
-		\vspace{-.5em}
-		$$
-		\mathcal{R}_0 = 1 / (1-q) = 3.03
-		$$
+		%\item this corresponds to the direct estimation from the final size of the epidemic %$q = 512/763 = 0.67$
+		%\vspace{-.5em}
+		%$$
+		%\mathcal{R}_0 = 1 / (1-q) = 3.03
+		%$$
 		\item based on \alert{many assumptions}:
 		\begin{itemize}
 			\item[-] common to all SIRs (homogeneous mixing, no incubation...)
@@ -743,13 +743,6 @@ $$
 	\end{itemize}	
 }
 
-\frame{
-	\frametitle{Box's loop}
-	\begin{figure}
-		\centering
-		\includegraphics[width=.8\linewidth]{boarding_school/Boxes_loop.png}
-	\end{figure}
-}
 
 \frame{
 	\frametitle{Box's loop}
