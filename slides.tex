@@ -34,8 +34,8 @@
 
 % define title page
 \title{Bayesian workflow for disease transmission modeling in Stan}
-\author{Léo Grinsztajn, Charles Margossian, Julien Riou, Elizaveta Semenova}
-\date{ Berlin Bayesians Meetup\\ 7 December 2021}
+\author{Léo Grinsztajn, Charles Margossian, Elizaveta Semenova, \underline{Julien Riou}}
+\date{ MfPH Next Generation talk \\ 2 November 2022}
 \institute{}
 
 % begin document
@@ -63,17 +63,18 @@
 	\frametitle{Introduction}
 	Models of disease transmission:
 	\begin{itemize}
-		\item Interpretability: phenomenological, \alert{mechanistic}
-		\item Scale: \alert{population-based}, agent-based
-		\item Framework: \alert{deterministic}, stochastic
+		\item Interpretability: phenomenological, mechanistic
+		\item Scale: compartmental, agent-based
+		\item Framework: deterministic, stochastic
 		\item Data-generating mechanisms: incubation, contagion, immunity, vaccination, mobility...
+		\item Objectives: simulation, inference
 	\end{itemize}
 	\pause
 	
 	\vspace{2em}
 	Mechanistic + population-based + deterministic 
 	
-	\vspace{1em} $\rightarrow$ \alert{ordinary differential equations (ODE)-based compartmental model} 
+	\vspace{1em} $\rightarrow$ \alert{ordinary differential equations}-based compartmental model
 }
 
 \frame{
@@ -896,207 +897,207 @@ $$
 	\item try with other values to understand \alert{when does the model break}
 	\end{itemize}
 }
+%
+%\section{Extension: Covid-19 transmission in Switzerland}
+%
+%\frame{
+%
+%	\frametitle{New Covid-19 cases in Switzerland in 2020}
+%	\begin{figure}
+%		\centering
+%		\includegraphics[scale=0.8]{extension/swiss_data.png}
+%	\end{figure}
+%}
+%
+%\frame{
+%    %TODO: priors
+%    \frametitle{Basic SIR}
+%    \textit{Transformed parameters} block
+%    \vspace{-7mm}
+%    \begin{center}
+%     \includegraphics[scale=0.6]{extension/transformed_parameters_0.png}
+%    \end{center}
+%    \textit{Model} block
+%    \vspace{-7mm}
+%    \begin{figure}
+%        \includegraphics[scale=0.6]{extension/model_0.png}
+%    \end{figure}
+%}
+%
+%
+%\frame{
+%    \frametitle{Basic SIR}
+%    \begin{figure}
+%		\centering
+%		\includegraphics[scale=0.4]{extension/sir_diag.png}
+%	\end{figure}
+%	    \begin{figure}
+%		\centering
+%		\includegraphics[scale=0.13]{extension/swiss_fit1.png}
+%	\end{figure}
+%}
+%
+%\frame{
+%    \frametitle{Adding underreporting: Stan code}
+%    
+%    \textit{parameters} block
+%    \vspace{-7mm}
+%    \begin{figure}
+%        \centering
+%        \includegraphics[scale=0.6]{extension/parameters_1.png}
+%    \end{figure}
+%    
+%    \textit{transformed parameters} block
+%    \vspace{-7mm}
+%        \begin{figure}
+%        \centering
+%        \includegraphics[scale=0.6]{extension/transformed_parameters_1.png}
+%    \end{figure}
+%    
+%    
+%    \textit{model} block
+%    \vspace{-7mm}
+%    \begin{figure}
+%        \centering
+%        \includegraphics[scale=0.6]{extension/model_1.png}
+%    \end{figure}
+%}
+%    
+%\frame{
+%    \frametitle{Adding underreporting: posterior predictive check}
+%    \begin{figure}
+%        \centering
+%        \includegraphics[scale=0.2]{extension/underreporting.png}
+%    \end{figure}
+%}
+%
+%\frame{
+%    \frametitle{Adding incubation time}
+%    \begin{figure}
+%        \includegraphics[scale=0.15]{extension/seir.jpeg}
+%    \end{figure}
+%    \begin{figure}
+%        \centering
+%        \includegraphics[0.6]{extension/seir_equations.png}
+%    \end{figure}
+%    Incubation time between 1/2 and 30 days $\rightarrow a \sim \mathcal{N}^+(0.4, 0.5)$
+%}
+%
+%\frame{
+%    \frametitle{Adding incubation time}
+%    \begin{figure}
+%        \centering
+%        \includegraphics[scale=0.15]{extension/swiss_fit2.png}
+%    \end{figure}
+%}
+%
+%\frame{
+%    \frametitle{Adding incubation time}
+%    \begin{figure}
+%        \centering
+%        \includegraphics[scale=0.2]{extension/a_distrib.png}
+%    \end{figure}
+%        $\text{Domain knowledge} \rightarrow \frac{1}{a} \sim \mathcal{N}^+(6, 1)$
+%}
+%
+%\frame{
+%    \frametitle{Adding incubation time}
+%    \begin{itemize}
+%        \item P(reported) is very low ( $\leq$  1\%)
+%        \vspace{2mm}
+%        \item Indeed, in a SEIR model, cases only decrease through immunity
+%        \vspace{2mm}
+%        \item We need to model control measures
+%    \end{itemize}
+%}
+%
+%\frame{
+%\frametitle{Modeling control measures}
+%%TODO image of logistic function
+%$\beta(t) = f(t) * \beta$, with $f(t) = \eta + (1 - \eta) * \frac{1}{1 + exp(\xi * (t - t_1 - \nu))}$
+%\newline
+%\textbf{Parameters}
+%\begin{itemize}
+%    \item $\eta$ is the decrease of transmission while control measures are fully in place
+%    \item $\xi$ is the slope of the decrease
+%    \item $\nu$ is the delay (after the date of introduction of control measures) until the measures are 50% effective
+%\end{itemize}
+%\textbf{Priors}
+%\begin{itemize}
+%    \item $\eta \sim \beta(2.5, 4)$ which means we expect governmental measures to reduce transmission, but not all the way to zero. 
+%    \item $\nu \sim exponential(1/5)$ which means the delay should be around a week but could be lower or quite higher. 
+%    \item $\xi \sim \mathcal{U}(0.5, 1.5)$, which means the slope has to be positive.
+%\end{itemize}
+%}
+%
+%\frame{
+%    \frametitle{Modeling control measures}
+%    \begin{figure}
+%        \centering
+%        \includegraphics[scale=0.22]{extension/pair_plot.png}
+%    \end{figure}
+%}
+%
+%\frame{
+%    \frametitle{Using serological survey data}
+%    Survey data from May 4 to May 7 in Geneva (83 / 775 have antibodies)
+%    
+%    \textbf{Assumptions:}
+%    \begin{itemize}
+%        \item Geneva is representative of Switzerland
+%        \item Having antibodies = being in the R compartment
+%    \end{itemize}
+%    \vspace{2mm}
+%    \textit{transformed parameters} block
+%    \vspace{-7mm}
+%    \begin{figure}
+%        \hspace*{-0.9cm}
+%        \includegraphics[scale=0.58]{extension/transformed_parameters_sero.png}
+%    \end{figure}
+%    \newline
+%    \textit{model} block
+%    \vspace{-7mm}
+%    \begin{figure}
+%         \hspace*{-0.9cm}
+%        \includegraphics[scale=0.58]{extension/model_sero.png}
+%    \end{figure}
+%}
+%
+%
+%\frame{
+%    \frametitle{Final model}
+%    \begin{figure}
+%        \centering
+%        \includegraphics[scale=0.10]{extension/swiss_fit4.png}
+%    \end{figure}
+%}
+%
+%\frame{
+%\frametitle{Possible improvements}
+%    \begin{itemize}
+%        \item Relax assumptions
+%        \item Incorporate testing or death data
+%        \item Stratify by age, location...
+%        \item ...
+%    \end{itemize}
+%}
+%
+%\frame{
+%\frametitle{Extension conclusion}
+%Building a model step by step using the Bayesian workflow allows us
+%\begin{itemize}
+%    \item to understand its failure modes better
+%    \item to know when we need to add more information into the model
+%    \item to be more transparent by sharing the different versions
+%\end{itemize}
+%
+%}
 
-\section{Extension: Covid-19 transmission in Switzerland}
+
+\section{Conclusions}
 
 \frame{
-
-	\frametitle{New Covid-19 cases in Switzerland in 2020}
-	\begin{figure}
-		\centering
-		\includegraphics[scale=0.8]{extension/swiss_data.png}
-	\end{figure}
-}
-
-\frame{
-    %TODO: priors
-    \frametitle{Basic SIR}
-    \textit{Transformed parameters} block
-    \vspace{-7mm}
-    \begin{center}
-     \includegraphics[scale=0.6]{bayesian_workflow_sir/extension/transformed_parameters_0.png}
-    \end{center}
-    \textit{Model} block
-    \vspace{-7mm}
-    \begin{figure}
-        \includegraphics[scale=0.6]{bayesian_workflow_sir/extension/model_0.png}
-    \end{figure}
-}
-
-
-\frame{
-    \frametitle{Basic SIR}
-    \begin{figure}
-		\centering
-		\includegraphics[scale=0.4]{bayesian_workflow_sir/extension/sir_diag.png}
-	\end{figure}
-	    \begin{figure}
-		\centering
-		\includegraphics[scale=0.13]{bayesian_workflow_sir/extension/swiss_fit1.png}
-	\end{figure}
-}
-
-\frame{
-    \frametitle{Adding underreporting: Stan code}
-    
-    \textit{parameters} block
-    \vspace{-7mm}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.6]{bayesian_workflow_sir/extension/parameters_1.png}
-    \end{figure}
-    
-    \textit{transformed parameters} block
-    \vspace{-7mm}
-        \begin{figure}
-        \centering
-        \includegraphics[scale=0.6]{bayesian_workflow_sir/extension/transformed_parameters_1.png}
-    \end{figure}
-    
-    
-    \textit{model} block
-    \vspace{-7mm}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.6]{bayesian_workflow_sir/extension/model_1.png}
-    \end{figure}
-}
-    
-\frame{
-    \frametitle{Adding underreporting: posterior predictive check}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.2]{bayesian_workflow_sir/extension/underreporting.png}
-    \end{figure}
-}
-
-\frame{
-    \frametitle{Adding incubation time}
-    \begin{figure}
-        \includegraphics[scale=0.15]{bayesian_workflow_sir/extension/seir.jpeg}
-    \end{figure}
-    \begin{figure}
-        \centering
-        \includegraphics[0.6]{bayesian_workflow_sir/extension/seir_equations.png}
-    \end{figure}
-    Incubation time between 1/2 and 30 days $\rightarrow a \sim \mathcal{N}^+(0.4, 0.5)$
-}
-
-\frame{
-    \frametitle{Adding incubation time}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.15]{bayesian_workflow_sir/extension/swiss_fit2.png}
-    \end{figure}
-}
-
-\frame{
-    \frametitle{Adding incubation time}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.2]{bayesian_workflow_sir/extension/a_distrib.png}
-    \end{figure}
-        $\text{Domain knowledge} \rightarrow \frac{1}{a} \sim \mathcal{N}^+(6, 1)$
-}
-
-\frame{
-    \frametitle{Adding incubation time}
-    \begin{itemize}
-        \item P(reported) is very low ( $\leq$  1\%)
-        \vspace{2mm}
-        \item Indeed, in a SEIR model, cases only decrease through immunity
-        \vspace{2mm}
-        \item We need to model control measures
-    \end{itemize}
-}
-
-\frame{
-\frametitle{Modeling control measures}
-%TODO image of logistic function
-$\beta(t) = f(t) * \beta$, with $f(t) = \eta + (1 - \eta) * \frac{1}{1 + exp(\xi * (t - t_1 - \nu))}$
-\newline
-\textbf{Parameters}
-\begin{itemize}
-    \item $\eta$ is the decrease of transmission while control measures are fully in place
-    \item $\xi$ is the slope of the decrease
-    \item $\nu$ is the delay (after the date of introduction of control measures) until the measures are 50% effective
-\end{itemize}
-\textbf{Priors}
-\begin{itemize}
-    \item $\eta \sim \beta(2.5, 4)$ which means we expect governmental measures to reduce transmission, but not all the way to zero. 
-    \item $\nu \sim exponential(1/5)$ which means the delay should be around a week but could be lower or quite higher. 
-    \item $\xi \sim \mathcal{U}(0.5, 1.5)$, which means the slope has to be positive.
-\end{itemize}
-}
-
-\frame{
-    \frametitle{Modeling control measures}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.22]{bayesian_workflow_sir/extension/pair_plot.png}
-    \end{figure}
-}
-
-\frame{
-    \frametitle{Using serological survey data}
-    Survey data from May 4 to May 7 in Geneva (83 / 775 have antibodies)
-    
-    \textbf{Assumptions:}
-    \begin{itemize}
-        \item Geneva is representative of Switzerland
-        \item Having antibodies = being in the R compartment
-    \end{itemize}
-    \vspace{2mm}
-    \textit{transformed parameters} block
-    \vspace{-7mm}
-    \begin{figure}
-        \hspace*{-0.9cm}
-        \includegraphics[scale=0.58]{bayesian_workflow_sir/extension/transformed_parameters_sero.png}
-    \end{figure}
-    \newline
-    \textit{model} block
-    \vspace{-7mm}
-    \begin{figure}
-         \hspace*{-0.9cm}
-        \includegraphics[scale=0.58]{bayesian_workflow_sir/extension/model_sero.png}
-    \end{figure}
-}
-
-
-\frame{
-    \frametitle{Final model}
-    \begin{figure}
-        \centering
-        \includegraphics[scale=0.10]{bayesian_workflow_sir/extension/swiss_fit4.png}
-    \end{figure}
-}
-
-\frame{
-\frametitle{Possible improvements}
-    \begin{itemize}
-        \item Relax assumptions
-        \item Incorporate testing or death data
-        \item Stratify by age, location...
-        \item ...
-    \end{itemize}
-}
-
-\frame{
-\frametitle{Extension conclusion}
-Building a model step by step using the Bayesian workflow allows us
-\begin{itemize}
-    \item to understand its failure modes better
-    \item to know when we need to add more information into the model
-    \item to be more transparent by sharing the different versions
-\end{itemize}
-
-}
-
-
-%\section{Conclusions}
-
-\frame{
-	\frametitle{General conclusions}
+	\frametitle{Conclusions}
 	General comments:
 	\begin{itemize}
 		\item develop models that correspond to the \alert{data-generating mechanisms}
